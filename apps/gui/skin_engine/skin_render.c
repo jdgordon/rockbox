@@ -181,13 +181,19 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
 #ifdef HAVE_LCD_BITMAP
         case SKIN_TOKEN_IMAGE_DISPLAY_LISTICON:
         case SKIN_TOKEN_IMAGE_PRELOAD_DISPLAY:
+        case SKIN_TOKEN_IMAGE_DISPLAY:
         {
             struct image_display *id = token->value.data;
             const char* label = id->label;
             struct gui_img *img = skin_find_item(label,SKIN_FIND_IMAGE, data);
-            if (img && img->loaded)
+            if (do_refresh && img && img->loaded)
             {
-                if (id->token == NULL)
+                if (token->type == SKIN_TOKEN_IMAGE_DISPLAY)
+                {
+                    if (gwps->data->backwards_compat&IMAGE_DRAW_ORDER_COMPAT)
+                        break;
+                }
+                else if (id->token == NULL)
                 {
                     img->display = id->subimage;
                 }
@@ -218,6 +224,18 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                         img->display = a;
                     }
                 }
+                if ((gwps->data->backwards_compat&IMAGE_DRAW_ORDER_COMPAT) == 0)
+                {
+                    if (img->using_preloaded_icons && img->display >= 0)
+                    {
+                        screen_put_icon(gwps->display, img->x, img->y, img->display);
+                    }
+                    else
+                    {
+                        wps_draw_image(gwps, img, img->display);
+                    }
+                    img->display = -1;
+                }
             }
             break;
         }
@@ -234,7 +252,14 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                     handle = radio_get_art_hid(&dim);
                 }
 #endif
-                data->albumart->draw_handle = handle;
+                if ((gwps->data->backwards_compat&IMAGE_DRAW_ORDER_COMPAT) == 0)
+                {
+                    draw_album_art(gwps, handle, false);
+                }
+                else
+                {
+                    data->albumart->draw_handle = handle;
+                }
             }
             break;
 #endif
@@ -710,7 +735,8 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
         line = line->next;
     }
 #ifdef HAVE_LCD_BITMAP
-    wps_display_images(gwps, &skin_viewport->vp);
+    if (gwps->data->backwards_compat&IMAGE_DRAW_ORDER_COMPAT)
+        wps_display_images(gwps, &skin_viewport->vp);
 #endif
 }
 

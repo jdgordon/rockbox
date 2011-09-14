@@ -680,6 +680,20 @@ static int parse_setting_and_lang(struct skin_element *element,
     token->value.i = i;
     return 0;
 }
+static int parse_backwards_compat(struct skin_element *element,
+                             struct wps_token *token,
+                             struct wps_data *wps_data)
+{
+    (void)token;
+    int i;
+    for (i=0; i<element->params_count; i++)
+    {
+        int val = element->params[i].data.number;
+        if (val <= 32)
+            wps_data->backwards_compat |= 1<<(val-1);
+    }
+    return 0;
+}
 static int parse_logical_if(struct skin_element *element,
                              struct wps_token *token,
                              struct wps_data *wps_data)
@@ -1479,6 +1493,7 @@ static void skin_data_reset(struct wps_data *wps_data)
     wps_data->full_line_progressbar = false;
 #endif
     wps_data->wps_loaded = false;
+    wps_data->backwards_compat = 0;
 }
 
 #ifdef HAVE_LCD_BITMAP
@@ -1934,6 +1949,9 @@ static int skin_element_callback(struct skin_element* element, void* data)
                     function = parse_skinvar;
                     break;
 #endif
+                case SKIN_TOKEN_BACKWARDS_COMPAT:
+                    function = parse_backwards_compat;
+                    break;
                 default:
                     break;
             }

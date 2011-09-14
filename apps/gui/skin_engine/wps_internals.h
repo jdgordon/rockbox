@@ -355,6 +355,9 @@ struct wps_data
     bool full_line_progressbar;
 #endif
     bool wps_loaded;
+    /* bitmap for backwards compat hacks: */
+    #define IMAGE_DRAW_ORDER_COMPAT (1<<0)
+    unsigned int backwards_compat;
 };
 
 /* wps_data end */

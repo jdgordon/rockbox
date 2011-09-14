@@ -496,6 +496,10 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
     {
         cursor += 2;
     }
+        if (!strcmp(tag_name, "zz"))
+        {
+            printf("helllo\n");
+        }
 
     if(!tag)
     {
@@ -682,7 +686,7 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
                 return 0;
             }
         }
-        else if(tolower(type_code) == 'i')
+        else if(tolower(type_code) == 'i' || tolower(type_code) == 'j')
         {
             /* Scanning an int argument */
             if(!isdigit(*cursor) && *cursor != '-')
@@ -766,7 +770,7 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
             cursor++;
         }
 
-        if (*tag_args != 'N')
+        if (*tag_args != 'N' && *tag_args != 'J')
             tag_args++;
 
         /* Checking for the optional bar */

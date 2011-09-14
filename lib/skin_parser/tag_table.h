@@ -52,6 +52,7 @@ enum skin_token_type {
     
     SKIN_TOKEN_NO_TOKEN,
     SKIN_TOKEN_UNKNOWN,
+    SKIN_TOKEN_BACKWARDS_COMPAT,
 
     /* Markers */
     SKIN_TOKEN_CHARACTER,
@@ -301,6 +302,7 @@ enum skin_token_type {
  *             C - Required skin code
  *             T - Required single skin tag
  *             N - any amount of strings.. must be the last param in the list
+ *             J - any amount of integers.. must be the last param
  *             \n - causes the parser to eat everything up to and including the \n
  *                  MUST be the last character of the prams string
  *          Any nullable parameter may be replaced in the WPS file
