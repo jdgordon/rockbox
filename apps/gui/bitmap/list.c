@@ -312,7 +312,7 @@ void list_draw(struct screen *display, struct gui_synclist *list)
             if (item_offset> item_width - (list_text_vp->width - text_pos))
             {
                 /* don't scroll */
-                display->puts_style_xyoffset(0, line, entry_name,
+                display->putsxy_style_xyoffset(0, line*h, entry_name,
                         style, item_offset, draw_offset);
             }
             else
@@ -327,7 +327,7 @@ void list_draw(struct screen *display, struct gui_synclist *list)
                 display->puts_scroll_style_xyoffset(0, line, entry_name,
                         style, item_offset, draw_offset);
             else
-                display->puts_style_xyoffset(0, line, entry_name,
+                display->putsxy_style_xyoffset(0, line*h, entry_name,
                         style, item_offset, draw_offset);
         }
         /* do the icon */

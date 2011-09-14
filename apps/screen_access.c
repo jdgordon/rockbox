@@ -169,10 +169,8 @@ struct screen screens[NB_SCREENS] =
         .vline=&lcd_vline,
         .hline=&lcd_hline,
         .scroll_step=&lcd_scroll_step,
-        .puts_style_offset=&lcd_puts_style_offset,
-        .puts_style_xyoffset=&lcd_puts_style_xyoffset,
+        .putsxy_style_xyoffset=&lcd_putsxy_style_xyoffset,
         .puts_scroll_style=&lcd_puts_scroll_style,
-        .puts_scroll_style_offset=&lcd_puts_scroll_style_offset,
         .puts_scroll_style_xyoffset=&lcd_puts_scroll_style_xyoffset,
 #endif /* HAVE_LCD_BITMAP */
 
@@ -188,9 +186,7 @@ struct screen screens[NB_SCREENS] =
         .putsxy=&lcd_putsxy,
         .puts=&lcd_puts,
         .putsf=&lcd_putsf,
-        .puts_offset=&lcd_puts_offset,
         .puts_scroll=&lcd_puts_scroll,
-        .puts_scroll_offset=&lcd_puts_scroll_offset,
         .scroll_speed=&lcd_scroll_speed,
         .scroll_delay=&lcd_scroll_delay,
         .stop_scroll=&lcd_stop_scroll,
@@ -262,10 +258,8 @@ struct screen screens[NB_SCREENS] =
         .vline=&lcd_remote_vline,
         .hline=&lcd_remote_hline,
         .scroll_step=&lcd_remote_scroll_step,
-        .puts_style_offset=&lcd_remote_puts_style_offset,
-        .puts_style_xyoffset=&lcd_remote_puts_style_xyoffset,
+        .putsxy_style_xyoffset=&lcd_remote_putsxy_style_xyoffset,
         .puts_scroll_style=&lcd_remote_puts_scroll_style,
-        .puts_scroll_style_offset=&lcd_remote_puts_scroll_style_offset,
         .puts_scroll_style_xyoffset=&lcd_remote_puts_scroll_style_xyoffset,
 #endif /* 1 */
 
@@ -279,9 +273,7 @@ struct screen screens[NB_SCREENS] =
         .putsxy=&lcd_remote_putsxy,
         .puts=&lcd_remote_puts,
         .putsf=&lcd_remote_putsf,
-        .puts_offset=&lcd_remote_puts_offset,
         .puts_scroll=&lcd_remote_puts_scroll,
-        .puts_scroll_offset=&lcd_remote_puts_scroll_offset,
         .scroll_speed=&lcd_remote_scroll_speed,
         .scroll_delay=&lcd_remote_scroll_delay,
         .stop_scroll=&lcd_remote_stop_scroll,

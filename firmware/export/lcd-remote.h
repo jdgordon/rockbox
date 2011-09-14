@@ -124,11 +124,7 @@ extern void lcd_remote_puts(int x, int y, const unsigned char *str);
 extern void lcd_remote_putsf(int x, int y, const unsigned char *fmt, ...);
 extern void lcd_remote_puts_style(int x, int y, const unsigned char *str,
                                   int style);
-extern void lcd_remote_puts_offset(int x, int y, const unsigned char *str,
-                                   int offset);
-extern void lcd_remote_puts_style_offset(int x, int y, const unsigned char *str,
-                                         int style, int offset);
-extern void lcd_remote_puts_style_xyoffset(int x, int y, const unsigned char *str,
+extern void lcd_remote_putsxy_style_xyoffset(int x, int y, const unsigned char *str,
                                          int style, int x_offset, int y_offset);
 extern void lcd_remote_putc(int x, int y, unsigned short ch);
 extern void lcd_remote_stop_scroll(void);
@@ -137,11 +133,6 @@ extern void lcd_remote_scroll_delay(int ms);
 extern void lcd_remote_puts_scroll(int x, int y, const unsigned char *str);
 extern void lcd_remote_puts_scroll_style(int x, int y, const unsigned char *str,
                                          int style);
-extern void lcd_remote_puts_scroll_offset(int x, int y,
-                                          const unsigned char *str, int offset);
-extern void lcd_remote_puts_scroll_style_offset(int x, int y,
-                                                const unsigned char *string,
-                                                int style, int offset);
 extern void lcd_remote_puts_scroll_style_xyoffset(int x, int y,
                                                   const unsigned char *string,
                                                   int style, int x_offset,

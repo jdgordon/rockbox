@@ -596,9 +596,10 @@ void write_line(struct screen *display, struct align_pos *format_align,
     else
     {
 #ifdef HAVE_LCD_BITMAP
+        int ypos = line * string_height;
         /* clear the line first */
         display->set_drawmode(DRMODE_SOLID|DRMODE_INVERSEVID);
-        display->fillrect(left_xpos, line*string_height, display->getwidth(), string_height);
+        display->fillrect(left_xpos, ypos, display->getwidth(), string_height);
         display->set_drawmode(DRMODE_SOLID);
 #endif
 
@@ -609,18 +610,18 @@ void write_line(struct screen *display, struct align_pos *format_align,
         /* print aligned strings */
         if (left_width != 0)
         {
-            display->puts_style_xyoffset(left_xpos/space_width, line,
+            display->putsxy_style_xyoffset(left_xpos, ypos,
                             (unsigned char *)format_align->left, style, 0, 0);
 
         }
         if (center_width != 0)
         {
-            display->puts_style_xyoffset(center_xpos/space_width, line,
+            display->putsxy_style_xyoffset(center_xpos, ypos,
                             (unsigned char *)format_align->center, style, 0, 0);
         }
         if (right_width != 0)
         {
-            display->puts_style_xyoffset(right_xpos/space_width, line,
+            display->putsxy_style_xyoffset(right_xpos, ypos,
                             (unsigned char *)format_align->right, style, 0, 0);
         }
 #else
