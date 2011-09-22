@@ -44,10 +44,6 @@
 #define CARD_NUM_SLOT   0
 #define NUM_CARDS       2
 
-#if NUM_CARDS < NUM_DRIVES
-#error NUM_CARDS less than NUM_DRIVES
-#endif
-
 #define EC_OK                    0
 #define EC_FAILED                1
 #define EC_NOCARD                2
@@ -120,7 +116,7 @@ static const char               sd_thread_name[] = "sd";
 static struct mutex             sd_mtx SHAREDBSS_ATTR;
 static struct event_queue       sd_queue;
 static struct semaphore         transfer_completion_signal;
-static volatile unsigned int    transfer_error[NUM_VOLUMES];
+static volatile unsigned int    transfer_error[NUM_DRIVES];
 /* align on cache line size */
 static unsigned char    aligned_buffer[UNALIGNED_NUM_SECTORS * SD_BLOCK_SIZE] 
                         __attribute__((aligned(32)));

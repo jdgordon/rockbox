@@ -270,6 +270,26 @@ void system_init(void)
     dma_init();
 
     ascodec_init();
+    
+    /*  Initialize power management settings */
+#ifdef HAVE_AS3543
+    /* PLL:       disable audio PLL, we use MCLK already */
+    ascodec_write_pmu(0x1A, 7, 0x02);
+    /* DCDC_Cntr: set switching speed of CVDD1/2 power supplies to 1 MHz */
+    ascodec_write_pmu(0x17, 7, 0x30);
+    /* Out_Cntr2: set drive strength of 24 MHz and 32 kHz clocks to 1 mA */
+    ascodec_write_pmu(0x1A, 2, 0xCC);
+    /* CHGVBUS2:  set VBUS threshold to 3.18V and EOC threshold to 30% CC */
+    ascodec_write_pmu(0x19, 2, 0x41);
+#if 0   /* don't set higher voltage until impact on runtime has been checked */
+    /* PVDD1:     set PVDD1 power supply to 2.5 V */
+    ascodec_write_pmu(0x18, 1, 0x35);
+    /* AVDD17:    set AVDD17 power supply to 2.5V */
+    ascodec_write_pmu(0x18, 7, 0x31);
+#endif
+#else
+    ascodec_write(AS3514_CVDD_DCDC3, AS314_CP_DCDC3_SETTING);
+#endif /* HAVE_AS3543 */
 
 #ifndef BOOTLOADER
     /* setup isr for microsd monitoring and for fuzev2 scrollwheel irq */
@@ -279,8 +299,6 @@ void system_init(void)
     /* pin selection for irq happens in the drivers */
 #endif
 
-    /*  Initialize power management settings */
-    ascodec_write(AS3514_CVDD_DCDC3, AS314_CP_DCDC3_SETTING);
 #if CONFIG_TUNER
     fmradio_i2c_init();
 #endif
