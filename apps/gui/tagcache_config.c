@@ -186,41 +186,28 @@ static int count_items(struct folder *start)
     return count;
 }    
 
-static struct child* find_index(struct folder *start, int index)
+static struct child* find_index(struct folder *start, int index, struct folder **parent)
 {
     int i = 0;
     while (i < start->children_count)
     {
         struct child *foo = &start->children[i];
         if (i == index)
+        {
+            if (parent)
+                *parent = start;
             return foo;
-        i++;
-        if (!foo->collapse_folder)
-        {
-            struct child *bar = find_index(foo->folder, index - i);
-            if (bar)
-                return bar;
-            index -= count_items(foo->folder);
         }
-    }
-    return NULL;
-}
-
-static struct folder* find_item_parent(struct folder *start, int index)
-{
-    int i = 0;
-    while (i < start->children_count)
-    {
-        struct child *foo = &start->children[i];
-        if (i == index)
-            return start;
         i++;
         if (!foo->collapse_folder)
         {
-            struct folder *bar;
-            bar = find_item_parent(foo->folder, index - i);
+            struct child *bar = find_index(foo->folder, index - i, parent);
             if (bar)
+            {
+                if (parent)
+                    *parent = foo->folder;
                 return bar;
+            }
             index -= count_items(foo->folder);
         }
     }
@@ -232,8 +219,9 @@ static const char * folder_get_name(int selected_item, void * data,
 {
     (void)buffer_len;
     struct folder *root = (struct folder*)data;
-    struct child *this = find_index(root, selected_item);
-    struct folder *parent = find_item_parent(root, selected_item);
+    struct folder *parent = NULL;
+    struct child *this = find_index(root, selected_item, &parent);
+    
     int i = 1;
 
     buffer[0] = '\0';
@@ -250,10 +238,10 @@ static int folder_action_callback(int action, struct gui_synclist *list)
     struct folder *root = (struct folder*)list->data;
     if (action == ACTION_STD_OK)
     {
-        struct child *this = find_index(root, list->selected_item);
+        struct folder *parent = NULL;
+        struct child *this = find_index(root, list->selected_item, &parent);
         if (this->collapse_folder && this->folder == NULL)
         {
-            struct folder *parent = find_item_parent(root, list->selected_item);
             this->folder = load_folder(parent, this->name);
             this->collapse_folder = false;
         }
