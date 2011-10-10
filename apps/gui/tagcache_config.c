@@ -39,6 +39,7 @@ struct folder {
     bool selected;
     struct child *children;
     int children_count;
+    int depth;
 
     struct folder* previous;
 };
@@ -101,8 +102,8 @@ static char* get_full_path(struct folder *start)
 /* support function for qsort() */
 static int compare(const void* p1, const void* p2)
 {
-    struct child *left = p1;
-    struct child *right = p2;
+    struct child *left = (struct child*)p1;
+    struct child *right = (struct child*)p2;
     return strcasecmp(left->name, right->name);
 }
 
@@ -112,7 +113,7 @@ static struct folder* load_folder(struct folder* parent, char *folder)
     char* path = get_full_path(parent);
     char fullpath[MAX_PATH];
     struct dirent *entry;
-    struct folder* this = folder_alloc(sizeof(struct folder));
+    struct folder* this = (struct folder*)folder_alloc(sizeof(struct folder));
     int child_count = 0;
     char *first_child = NULL;
 
@@ -127,6 +128,8 @@ static struct folder* load_folder(struct folder* parent, char *folder)
     this->name = folder;
     this->children = NULL;
     this->children_count = 0;
+    this->depth = parent ? parent->depth + 1 : 0;
+    this->selected = 0;
     
     while ((entry = readdir(dir))) {
         int len = strlen((char *)entry->d_name);
@@ -152,7 +155,7 @@ static struct folder* load_folder(struct folder* parent, char *folder)
     }
     closedir(dir);
     /* now put the names in the array */
-    this->children = folder_alloc(sizeof(struct child) * child_count);
+    this->children = (struct child*)folder_alloc(sizeof(struct child) * child_count);
     if (!this->children)
         return NULL;
     while (child_count)
@@ -217,7 +220,7 @@ static struct folder* find_item_parent(struct folder *start, int index)
             struct folder *bar;
             bar = find_item_parent(foo->folder, index - i);
             if (bar)
-                return foo;
+                return bar;
             index -= count_items(foo->folder);
         }
     }
@@ -227,23 +230,32 @@ static struct folder* find_item_parent(struct folder *start, int index)
 static const char * folder_get_name(int selected_item, void * data,
                                    char * buffer, size_t buffer_len)
 {
-    struct child *this = find_index(data, selected_item);
-    return this->name;
+    struct child *this = find_index((struct folder*)data, selected_item);
+    struct folder *parent = find_item_parent((struct folder*)data, selected_item);
+    int i = 1;
+    buffer[0] = '\0';
+    while (i < parent->depth + 1)
+    {
+        strcat(buffer, "  ");
+        i++;
+    }
+    strcat(buffer, this->name);
+    return buffer;
 }
 static int folder_action_callback(int action, struct gui_synclist *list)
 {
     if (action == ACTION_STD_OK)
     {
-        struct child *this = find_index(list->data, list->selected_item);
+        struct child *this = find_index((struct folder*)list->data, list->selected_item);
         if (this->collapse_folder && this->folder == NULL)
         {
-            struct folder *parent = find_item_parent(list->data, list->selected_item);
+            struct folder *parent = find_item_parent((struct folder*)list->data, list->selected_item);
             this->folder = load_folder(parent, this->name);
             this->collapse_folder = false;
         }
         else
             this->collapse_folder = !this->collapse_folder;
-        list->nb_items = count_items(list->data);
+        list->nb_items = count_items((struct folder*)list->data);
         return ACTION_REDRAW;
     }
     return action;
@@ -259,7 +271,7 @@ void tagcache_do_config(void)
     simplelist_info_init(&info, "hello", count_items(root), root);
     info.get_name = folder_get_name;
     info.action_callback = folder_action_callback;
-    while (1)
+  //  while (1)
         simplelist_show_list(&info);
     
 }
