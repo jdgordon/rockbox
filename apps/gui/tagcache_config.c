@@ -186,7 +186,7 @@ static int count_items(struct folder *start)
     return count;
 }    
 
-struct child* find_index(struct folder *start, int index)
+static struct child* find_index(struct folder *start, int index)
 {
     int i = 0;
     while (i < start->children_count)
@@ -230,9 +230,12 @@ static struct folder* find_item_parent(struct folder *start, int index)
 static const char * folder_get_name(int selected_item, void * data,
                                    char * buffer, size_t buffer_len)
 {
-    struct child *this = find_index((struct folder*)data, selected_item);
-    struct folder *parent = find_item_parent((struct folder*)data, selected_item);
+    (void)buffer_len;
+    struct folder *root = (struct folder*)data;
+    struct child *this = find_index(root, selected_item);
+    struct folder *parent = find_item_parent(root, selected_item);
     int i = 1;
+
     buffer[0] = '\0';
     while (i < parent->depth + 1)
     {
@@ -244,18 +247,19 @@ static const char * folder_get_name(int selected_item, void * data,
 }
 static int folder_action_callback(int action, struct gui_synclist *list)
 {
+    struct folder *root = (struct folder*)list->data;
     if (action == ACTION_STD_OK)
     {
-        struct child *this = find_index((struct folder*)list->data, list->selected_item);
+        struct child *this = find_index(root, list->selected_item);
         if (this->collapse_folder && this->folder == NULL)
         {
-            struct folder *parent = find_item_parent((struct folder*)list->data, list->selected_item);
+            struct folder *parent = find_item_parent(root, list->selected_item);
             this->folder = load_folder(parent, this->name);
             this->collapse_folder = false;
         }
         else
             this->collapse_folder = !this->collapse_folder;
-        list->nb_items = count_items((struct folder*)list->data);
+        list->nb_items = count_items(root);
         return ACTION_REDRAW;
     }
     return action;
@@ -268,10 +272,12 @@ void tagcache_do_config(void)
     buffer_front = plugin_get_buffer(&buffer_remaining);
     root = load_folder(NULL, "");
 
-    simplelist_info_init(&info, "hello", count_items(root), root);
-    info.get_name = folder_get_name;
-    info.action_callback = folder_action_callback;
-  //  while (1)
+    while (1)
+    {
+        simplelist_info_init(&info, "hello", count_items(root), root);
+        info.get_name = folder_get_name;
+        info.action_callback = folder_action_callback;
         simplelist_show_list(&info);
+    }
     
 }
