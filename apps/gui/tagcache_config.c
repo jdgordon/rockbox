@@ -29,11 +29,9 @@
 #include "plugin.h"
 
 struct child {
-    union {
-        char* name;
-        struct folder *folder;
-    } u;
-    bool is_folder;
+    char* name;
+    struct folder *folder;
+    bool collapse_folder;
 };
 
 struct folder {
@@ -43,7 +41,6 @@ struct folder {
     int children_count;
 
     struct folder* previous;
-    struct folder* next;
 };
 
 static char* buffer_front;
@@ -106,7 +103,7 @@ static int compare(const void* p1, const void* p2)
 {
     struct child *left = p1;
     struct child *right = p2;
-    return strcasecmp(left->u.name, right->u.name);
+    return strcasecmp(left->name, right->name);
 }
 
 static struct folder* load_folder(struct folder* parent, char *folder)
@@ -126,9 +123,8 @@ static struct folder* load_folder(struct folder* parent, char *folder)
     dir = opendir(fullpath);
     if (!dir)
         return NULL;
-    this->previous = NULL;
-    this->name = folder; //fixme
-    this->next = NULL;
+    this->previous = parent;
+    this->name = folder;
     this->children = NULL;
     this->children_count = 0;
     
@@ -150,19 +146,20 @@ static struct folder* load_folder(struct folder* parent, char *folder)
         char *name = folder_alloc_from_end(len+1);
         if (!name)
             return NULL;
-        memcpy(name, (char *)entry->d_name, len);
+        memcpy(name, (char *)entry->d_name, len+1);
         child_count++;
         first_child = name;
     }
     closedir(dir);
     /* now put the names in the array */
-    this->children = folder_alloc(sizeof(struct child*) * child_count);
+    this->children = folder_alloc(sizeof(struct child) * child_count);
     if (!this->children)
         return NULL;
     while (child_count)
     {
-        this->children[this->children_count].u.name = first_child;
-        this->children[this->children_count].is_folder = false;
+        this->children[this->children_count].name = first_child;
+        this->children[this->children_count].folder = NULL;
+        this->children[this->children_count].collapse_folder = true;
         this->children_count++;
         first_child += strlen(first_child) + 1;
         child_count--;
@@ -171,10 +168,98 @@ static struct folder* load_folder(struct folder* parent, char *folder)
     return this;
 }
 
+static int count_items(struct folder *start)
+{
+    int count = 0;
+    int i;
+
+    for (i=0; i<start->children_count; i++)
+    {
+        struct child *foo = &start->children[i];
+        if (!foo->collapse_folder)
+            count += count_items(foo->folder);
+        count++;
+    }
+    return count;
+}    
+
+struct child* find_index(struct folder *start, int index)
+{
+    int i = 0;
+    while (i < start->children_count)
+    {
+        struct child *foo = &start->children[i];
+        if (i == index)
+            return foo;
+        i++;
+        if (!foo->collapse_folder)
+        {
+            struct child *bar = find_index(foo->folder, index - i);
+            if (bar)
+                return bar;
+            index -= count_items(foo->folder);
+        }
+    }
+    return NULL;
+}
+
+static struct folder* find_item_parent(struct folder *start, int index)
+{
+    int i = 0;
+    while (i < start->children_count)
+    {
+        struct child *foo = &start->children[i];
+        if (i == index)
+            return start;
+        i++;
+        if (!foo->collapse_folder)
+        {
+            struct folder *bar;
+            bar = find_item_parent(foo->folder, index - i);
+            if (bar)
+                return foo;
+            index -= count_items(foo->folder);
+        }
+    }
+    return NULL;
+}
+
+static const char * folder_get_name(int selected_item, void * data,
+                                   char * buffer, size_t buffer_len)
+{
+    struct child *this = find_index(data, selected_item);
+    return this->name;
+}
+static int folder_action_callback(int action, struct gui_synclist *list)
+{
+    if (action == ACTION_STD_OK)
+    {
+        struct child *this = find_index(list->data, list->selected_item);
+        if (this->collapse_folder && this->folder == NULL)
+        {
+            struct folder *parent = find_item_parent(list->data, list->selected_item);
+            this->folder = load_folder(parent, this->name);
+            this->collapse_folder = false;
+        }
+        else
+            this->collapse_folder = !this->collapse_folder;
+        list->nb_items = count_items(list->data);
+        return ACTION_REDRAW;
+    }
+    return action;
+}
+
 void tagcache_do_config(void)
 {
     struct folder *root;
+    struct simplelist_info info;
     buffer_front = plugin_get_buffer(&buffer_remaining);
     root = load_folder(NULL, "");
+
+    simplelist_info_init(&info, "hello", count_items(root), root);
+    info.get_name = folder_get_name;
+    info.action_callback = folder_action_callback;
+    while (1)
+        simplelist_show_list(&info);
     
 }
