@@ -414,6 +414,7 @@ static void init(void)
     audio_init();
     
     settings_apply_skins();
+    tagcache_do_config();
 }
 
 #else
