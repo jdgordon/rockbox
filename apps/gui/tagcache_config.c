@@ -53,10 +53,6 @@ static char* folder_alloc(size_t size)
     size = (size + 3) & ~3;
     if (size > buffer_remaining)
         return NULL;
-
-    /* Other code touches audiobuf. Make sure it stays aligned */
-    buffer_front = (void *)(((unsigned long)buffer_front + 3) & ~3);
-
     retval = buffer_front;
     buffer_front += size;
     return retval;
@@ -152,6 +148,8 @@ static struct folder* load_folder(struct folder* parent, char *folder)
         memcpy(name, (char *)entry->d_name, len+1);
         child_count++;
         first_child = name;
+        if (child_count > 15)
+            break;
     }
     closedir(dir);
     /* now put the names in the array */
