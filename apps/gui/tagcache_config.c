@@ -44,25 +44,30 @@ struct folder {
     struct folder* previous;
 };
 
-static char* buffer_front;
-static size_t buffer_remaining;
+static char *buffer_front, *buffer_end;
 static char* folder_alloc(size_t size)
 {
     char* retval;
     /* 32-bit aligned */
     size = (size + 3) & ~3;
-    if (size > buffer_remaining)
+    if (buffer_front + size > buffer_end)
+    {
+        printf("OOM folder_alloc()\n");
         return NULL;
+    }
     retval = buffer_front;
     buffer_front += size;
     return retval;
 }
 static char* folder_alloc_from_end(size_t size)
 {
-    if (buffer_remaining < size)
+    if (buffer_end - size < buffer_front)
+    {
+        printf("OOM folder_alloc_from_end()\n");
         return NULL;
-    buffer_remaining -= size;
-    return &buffer_front[buffer_remaining];
+    }
+    buffer_end -= size;
+    return buffer_end;
 }
     
 
@@ -89,9 +94,7 @@ static char* get_full_path(struct folder *start)
     }
     if (remaining < 1)
         return NULL;
-    buf--;
-    *buf = '/';
-    // remove the trailing /
+    /* remove the trailing / */
     buf[strlen(buf)-1] = '\0';
     return buf;
 }
@@ -124,7 +127,7 @@ static struct folder* load_folder(struct folder* parent, char *folder)
     this->name = folder;
     this->children = NULL;
     this->children_count = 0;
-    this->depth = parent ? parent->depth + 1 : 0;
+    this->depth = parent ? parent->depth + 1 : -1;
     this->selected = 0;
     
     while ((entry = readdir(dir))) {
@@ -148,8 +151,6 @@ static struct folder* load_folder(struct folder* parent, char *folder)
         memcpy(name, (char *)entry->d_name, len+1);
         child_count++;
         first_child = name;
-        if (child_count > 15)
-            break;
     }
     closedir(dir);
     /* now put the names in the array */
@@ -192,8 +193,7 @@ static struct child* find_index(struct folder *start, int index, struct folder *
         struct child *foo = &start->children[i];
         if (i == index)
         {
-            if (parent)
-                *parent = start;
+            *parent = start;
             return foo;
         }
         i++;
@@ -202,8 +202,6 @@ static struct child* find_index(struct folder *start, int index, struct folder *
             struct child *bar = find_index(foo->folder, index - i, parent);
             if (bar)
             {
-                if (parent)
-                    *parent = foo->folder;
                 return bar;
             }
             index -= count_items(foo->folder);
@@ -220,7 +218,7 @@ static const char * folder_get_name(int selected_item, void * data,
     struct folder *parent = NULL;
     struct child *this = find_index(root, selected_item, &parent);
     
-    int i = 1;
+    int i = 0;
 
     buffer[0] = '\0';
     while (i < parent->depth + 1)
@@ -255,7 +253,9 @@ void tagcache_do_config(void)
 {
     struct folder *root;
     struct simplelist_info info;
-    buffer_front = plugin_get_buffer(&buffer_remaining);
+    size_t buf_size;
+    buffer_front = plugin_get_buffer(&buf_size);
+    buffer_end = buffer_front + buf_size;
     root = load_folder(NULL, "");
 
     while (1)
