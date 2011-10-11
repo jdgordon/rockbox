@@ -231,25 +231,18 @@ static const char * folder_get_name(int selected_item, void * data,
     struct folder *parent = NULL;
     struct child *this = find_index(root, selected_item, &parent);
     
-/*   This would have been nice to use, but looks crap on non-fixed width fonts
     buffer[0] = '\0';
     if (parent->depth >= 0)
     {
         int i = 0;
-        while (i < parent->depth - 1)
+        while (i < parent->depth + 1)
         {
-            strcat(buffer, "+  ");
+            strcat(buffer, "\t");
             i++;
         }
-        strcat(buffer, "+--  ");
     }
     strcat(buffer, this->name);
     return buffer;
-    */
-    char* dir = get_full_path(parent);
-    snprintf(buffer, buffer_len, "%s/%s", parent ? dir : "", this->name);
-    return buffer;
-    
 }
 
 static enum themable_icons folder_get_icon(int selected_item, void * data)
