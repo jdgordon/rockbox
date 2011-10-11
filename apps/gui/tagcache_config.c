@@ -231,16 +231,25 @@ static const char * folder_get_name(int selected_item, void * data,
     struct folder *parent = NULL;
     struct child *this = find_index(root, selected_item, &parent);
     
-    int i = 0;
-
+/*   This would have been nice to use, but looks crap on non-fixed width fonts
     buffer[0] = '\0';
-    while (i < parent->depth + 1)
+    if (parent->depth >= 0)
     {
-        strcat(buffer, "  ");
-        i++;
+        int i = 0;
+        while (i < parent->depth - 1)
+        {
+            strcat(buffer, "+  ");
+            i++;
+        }
+        strcat(buffer, "+--  ");
     }
     strcat(buffer, this->name);
     return buffer;
+    */
+    char* dir = get_full_path(parent);
+    snprintf(buffer, buffer_len, "%s/%s", parent ? dir : "", this->name);
+    return buffer;
+    
 }
 
 static enum themable_icons folder_get_icon(int selected_item, void * data)
@@ -290,14 +299,61 @@ static int folder_action_callback(int action, struct gui_synclist *list)
     return action;
 }
 
+static struct child* find_from_filename(char* filename, struct folder *root)
+{
+    char *slash = strchr(filename, '/');
+    int i = 0;
+    if (slash)
+        *slash = '\0';
+    if (!root)
+        return NULL;
+
+    while (i < root->children_count)
+    {
+        struct child *this = &root->children[i];
+        if (!strcasecmp(this->name, filename))
+        {
+            if (!slash)
+                return this;
+            if (!this->folder)
+                this->folder = load_folder(root, this->name);
+            this->state = EXPANDED;
+            return find_from_filename(slash+1, this->folder);
+        }
+        i++;
+    }
+    return NULL;
+}
+
+static int readline_callback(int n, char *buf, void *parameters)
+{
+    (void)n;
+    struct folder *root = (struct folder*)parameters;
+    char* slash = strchr(buf, '/');
+    struct child *item = find_from_filename(slash ? slash + 1 : buf, root);
+    if (item)
+        item->state = SELECTED;
+    return 0;
+}
+
 void tagcache_do_config(void)
 {
     struct folder *root;
     struct simplelist_info info;
     size_t buf_size;
+    int fd;
+    char buf[512];
+
     buffer_front = plugin_get_buffer(&buf_size);
     buffer_end = buffer_front + buf_size;
     root = load_folder(NULL, "");
+    
+    fd = open_utf8(ROCKBOX_DIR "/database.txt", O_RDONLY);
+    if (fd >= 0)
+    {
+        fast_readline(fd, buf, sizeof buf, root, readline_callback);
+        close(fd);
+    }
 
    // while (1)
     {
