@@ -28,15 +28,29 @@
 #include "list.h"
 #include "plugin.h"
 
+
+/*
+ * Order for changing child states:
+ * 1) expand folder (skip to 2 if empty)
+ * 2) collapse and select
+ * 3) unselect
+ */
+
+enum child_state {
+    EXPANDED,
+    SELECTED,
+    COLLAPSED
+};
+    
+
 struct child {
     char* name;
     struct folder *folder;
-    bool collapse_folder;
+    enum child_state state;
 };
 
 struct folder {
     char *name;
-    bool selected;
     struct child *children;
     int children_count;
     int depth;
@@ -128,7 +142,6 @@ static struct folder* load_folder(struct folder* parent, char *folder)
     this->children = NULL;
     this->children_count = 0;
     this->depth = parent ? parent->depth + 1 : -1;
-    this->selected = 0;
     
     while ((entry = readdir(dir))) {
         int len = strlen((char *)entry->d_name);
@@ -161,7 +174,7 @@ static struct folder* load_folder(struct folder* parent, char *folder)
     {
         this->children[this->children_count].name = first_child;
         this->children[this->children_count].folder = NULL;
-        this->children[this->children_count].collapse_folder = true;
+        this->children[this->children_count].state = COLLAPSED;
         this->children_count++;
         first_child += strlen(first_child) + 1;
         child_count--;
@@ -178,7 +191,7 @@ static int count_items(struct folder *start)
     for (i=0; i<start->children_count; i++)
     {
         struct child *foo = &start->children[i];
-        if (!foo->collapse_folder)
+        if (foo->state == EXPANDED)
             count += count_items(foo->folder);
         count++;
     }
@@ -197,7 +210,7 @@ static struct child* find_index(struct folder *start, int index, struct folder *
             return foo;
         }
         i++;
-        if (!foo->collapse_folder)
+        if (foo->state == EXPANDED)
         {
             struct child *bar = find_index(foo->folder, index - i, parent);
             if (bar)
@@ -229,20 +242,48 @@ static const char * folder_get_name(int selected_item, void * data,
     strcat(buffer, this->name);
     return buffer;
 }
+
+static enum themable_icons folder_get_icon(int selected_item, void * data)
+{
+    struct folder *root = (struct folder*)data;
+    struct folder *parent = NULL;
+    struct child *this = find_index(root, selected_item, &parent);
+
+    switch (this->state)
+    {
+        case SELECTED:
+            return Icon_Cursor;
+        case COLLAPSED:
+            return Icon_Folder;
+        case EXPANDED:
+            return Icon_Submenu;
+    }
+    return Icon_NOICON;
+}
+
 static int folder_action_callback(int action, struct gui_synclist *list)
 {
     struct folder *root = (struct folder*)list->data;
     if (action == ACTION_STD_OK)
     {
         struct folder *parent = NULL;
-        struct child *this = find_index(root, list->selected_item, &parent);
-        if (this->collapse_folder && this->folder == NULL)
+        struct child *this = find_index(root, list->selected_item, &parent);        
+        switch (this->state)
         {
-            this->folder = load_folder(parent, this->name);
-            this->collapse_folder = false;
+            case EXPANDED:
+                this->state = SELECTED;
+                break;
+            case SELECTED:
+                this->state = COLLAPSED;
+                if (this->folder && this->folder->children_count == 0)
+                    this->state = COLLAPSED;
+                break;
+            case COLLAPSED:
+                if (this->folder == NULL)
+                    this->folder = load_folder(parent, this->name);
+                this->state = this->folder->children_count == 0 ?
+                        SELECTED : EXPANDED;
         }
-        else
-            this->collapse_folder = !this->collapse_folder;
         list->nb_items = count_items(root);
         return ACTION_REDRAW;
     }
@@ -258,11 +299,12 @@ void tagcache_do_config(void)
     buffer_end = buffer_front + buf_size;
     root = load_folder(NULL, "");
 
-    while (1)
+   // while (1)
     {
         simplelist_info_init(&info, "hello", count_items(root), root);
         info.get_name = folder_get_name;
         info.action_callback = folder_action_callback;
+        info.get_icon = folder_get_icon;
         simplelist_show_list(&info);
     }
     
