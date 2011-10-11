@@ -151,9 +151,11 @@ void list_draw(struct screen *display, struct gui_synclist *list)
     int item_offset;
     bool show_title;
     struct viewport *list_text_vp = &list_text[screen];
-
+    int indent = 0;
+    int char_width;
     line_height = font_get(parent->font)->height;
     display->set_viewport(parent);
+    char_width = display->getstringsize("M", NULL, NULL);
     display->clear_viewport();
     display->scroll_stop(list_text_vp);
     *list_text_vp = *parent;
@@ -243,9 +245,29 @@ void list_draw(struct screen *display, struct gui_synclist *list)
         unsigned char *entry_name;
         int text_pos = 0;
         int line = i - start;
+        indent = 0;
         s = list->callback_get_item_name(i, list->data, entry_buffer,
                                          sizeof(entry_buffer));
         entry_name = P2STR(s);
+        while (*entry_name == '\t')
+        {
+            indent++;
+            entry_name++;
+        }
+        if (indent)
+        {
+            if (icon_width)
+                indent *= icon_width;
+            else
+                indent *= char_width;
+        }
+        if (indent)
+        {
+            list_icons.x += indent;
+            list_text_vp->x += indent;
+            list_text_vp->width -= indent;
+        }
+            
         display->set_viewport(list_text_vp);
         style = STYLE_DEFAULT;
         /* position the string at the correct offset place */
@@ -342,6 +364,12 @@ void list_draw(struct screen *display, struct gui_synclist *list)
                 i <  list->selected_item + list->selected_size)
         {
             screen_put_icon_with_offset(display, 0, line, 0, draw_offset, Icon_Cursor);
+        }
+        if (indent)
+        {
+            list_icons.x -= indent;
+            list_text_vp->x -= indent;
+            list_text_vp->width += indent;
         }
     }
     display->set_viewport(parent);
