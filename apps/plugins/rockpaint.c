@@ -210,6 +210,17 @@
 #define ROCKPAINT_LEFT      BUTTON_PREV
 #define ROCKPAINT_RIGHT     BUTTON_NEXT
 
+#elif CONFIG_KEYPAD == SANSA_FUZEPLUS_PAD
+#define ROCKPAINT_QUIT      BUTTON_POWER
+#define ROCKPAINT_DRAW      BUTTON_SELECT
+#define ROCKPAINT_MENU      BUTTON_PLAYPAUSE
+#define ROCKPAINT_TOOLBAR   BUTTON_BACK
+#define ROCKPAINT_TOOLBAR2  (BUTTON_BACK|BUTTON_PLAYPAUSE)
+#define ROCKPAINT_UP        BUTTON_UP
+#define ROCKPAINT_DOWN      BUTTON_DOWN
+#define ROCKPAINT_LEFT      BUTTON_LEFT
+#define ROCKPAINT_RIGHT     BUTTON_RIGHT
+
 #else
 #error "Please define keys for this keypad"
 #endif
@@ -1016,7 +1027,6 @@ static bool browse_fonts( char *dst, int dst_size )
                     size_t siz;
                     reset_font = true;
                     rb->snprintf( bbuf, MAX_PATH, FONT_DIR "/%s", e->name );
-                    rb->font_load(NULL, bbuf );
                     rb->font_getstringsize( e->name, &fw, &fh, FONT_UI );
                     if( fw > LCD_WIDTH ) fw = LCD_WIDTH;
                     siz = (sizeof(struct font_preview) + fw*fh*FB_DATA_SZ+3) & ~3;
@@ -1083,7 +1093,7 @@ static bool browse_fonts( char *dst, int dst_size )
             li = tree->filesindir-1;
             if( reset_font )
             {
-                rb->font_load(NULL, bbuf_s );
+             // fixme   rb->font_load(NULL, bbuf_s );
                 reset_font = false;
             }
             if( lvi-fvi+1 < tree->filesindir )
@@ -1636,6 +1646,7 @@ static void show_grid( bool update )
 static void draw_text( int x, int y )
 {
     int selected = 0;
+    int current_font_id = rb->global_status->font_id[SCREEN_MAIN];
     buffer->text.text[0] = '\0';
     buffer->text.font[0] = '\0';
     while( 1 )
@@ -1648,9 +1659,12 @@ static void draw_text( int x, int y )
                 break;
 
             case TEXT_MENU_FONT:
-                if( browse_fonts( buffer->text.font, MAX_PATH ) )
+                if (current_font_id != rb->global_status->font_id[SCREEN_MAIN])
+                    rb->font_unload(current_font_id);
+                if(browse_fonts( buffer->text.font, MAX_PATH ) )
                 {
-                    rb->font_load(NULL, buffer->text.font );
+                    current_font_id = rb->font_load(buffer->text.font );
+                    rb->lcd_setfont(current_font_id);
                 }
                 break;
 
@@ -1704,7 +1718,9 @@ static void draw_text( int x, int y )
                     rb->snprintf( buffer->text.font, MAX_PATH,
                                   FONT_DIR "/%s.fnt",
                                   rb->global_settings->font_file );
-                    rb->font_load(NULL, buffer->text.font );
+                    if (current_font_id != rb->global_status->font_id[SCREEN_MAIN])
+                        rb->font_unload(current_font_id);
+                    rb->lcd_setfont(FONT_UI);
                 }
                 return;
         }

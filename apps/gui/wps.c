@@ -42,7 +42,6 @@
 #include "playlist.h"
 #ifdef HAVE_LCD_BITMAP
 #include "icons.h"
-#include "peakmeter.h"
 #endif
 #include "lang.h"
 #include "bookmark.h"
@@ -440,19 +439,6 @@ bool ffwd_rew(int button)
     }
     return usb;
 }
-
-
-void display_keylock_text(bool locked)
-{
-    int i;
-    FOR_NB_SCREENS(i)
-        skin_get_gwps(WPS, i)->display->stop_scroll();
-
-    splash(HZ, locked ? ID2P(LANG_KEYLOCK_ON) : ID2P(LANG_KEYLOCK_OFF));
-}
-
-
-
 
 #if defined(HAVE_BACKLIGHT) || defined(HAVE_REMOTE_LCD)
 static void gwps_caption_backlight(struct wps_state *state)

@@ -1,12 +1,13 @@
 <RCC>
-    <qresource prefix="/" >
+    <qresource prefix="/">
         <file>../../docs/CREDITS</file>
         <file>../../docs/gpl-2.0.html</file>
     </qresource>
-     <qresource>
+    <qresource>
         <file alias="builtin/VOICE_PAUSE.wav">../../tools/VOICE_PAUSE.wav</file>
+        <file alias="builtin/voice-corrections.txt">../../tools/voice-corrections.txt</file>
     </qresource>
-    <qresource prefix="/" >
+    <qresource prefix="/">
         <file>icons/audio-input-microphone.png</file>
         <file>icons/bootloader_btn.png</file>
         <file>icons/dialog-error.png</file>
@@ -26,17 +27,21 @@
         <file>icons/rbutil.png</file>
         <file>icons/rembootloader_btn.png</file>
         <file>icons/remrb_btn.png</file>
-        <file>icons/rockbox-1.png</file>
-        <file>icons/rockbox-5.png</file>
+        <file>icons/rockbox-16.png</file>
+        <file>icons/rockbox-32.png</file>
+        <file>icons/rockbox-48.png</file>
+        <file>icons/rockbox-64.png</file>
+        <file>icons/rockbox-128.png</file>
+        <file>icons/rockbox-256.png</file>
         <file>icons/system-search.png</file>
         <file>icons/talkfile_btn.png</file>
         <file>icons/themes_btn.png</file>
         <file>icons/user-trash-full.png</file>
         <file>icons/view-refresh.png</file>
-        <file>icons/wizard.xpm</file>
+        <file>icons/wizard.jpg</file>
         <file alias="icons/rockbox-clef.svg">../../docs/logo/rockbox-clef.svg</file>
     </qresource>
-    <qresource prefix="/ini" >
+    <qresource prefix="/ini">
         <file>rbutil.ini</file>
     </qresource>
 </RCC>

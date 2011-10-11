@@ -2521,7 +2521,7 @@ fi
     boottool="true"
     bootoutput=""
     appextra="gui:recorder:radio"
-    plugins="no"
+    plugins="yes"
     swcodec="yes"
     toolset=$scramblebitmaptools
     t_cpu="arm"
@@ -2541,7 +2541,7 @@ fi
     output="rockbox.sansa"
     bootoutput="bootloader-clipzip.sansa"
     appextra="recorder:gui:radio"
-    plugins="yes"
+    plugins=""
     swcodec="yes"
     toolset=$scramblebitmaptools
     t_cpu="arm"
@@ -3627,7 +3627,7 @@ if [ -n "$ARG_LCDWIDTH" ]; then
 fi
 
 # remove parts from the cmdline we're going to set unconditionally
-cmdline=`echo $cmdline | sed -e s,--target=[a-zA-Z0-9]\*,,g \
+cmdline=`echo $cmdline | sed -e s,--target=[a-zA-Z_0-9]\*,,g \
                             -e s,--ram=[0-9]\*,,g \
                             -e s,--rbdir=[./a-zA-Z0-9]\*,,g \
                             -e s,--type=[a-zA-Z]\*,,g`

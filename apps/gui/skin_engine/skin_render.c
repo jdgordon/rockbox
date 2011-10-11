@@ -31,6 +31,7 @@
 #ifdef HAVE_ALBUMART
 #include "albumart.h"
 #endif
+#include "settings.h"
 #include "skin_display.h"
 #include "skin_engine.h"
 #include "skin_parser.h"
@@ -302,7 +303,9 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
     else if (branch->type == LINE && branch->children_count)
     {
         struct skin_element *child = branch->children[0];
+#if defined(HAVE_LCD_BITMAP) || defined(HAVE_ALBUMART)
         struct wps_token *token;
+#endif
         while (child)
         {
             if (child->type == CONDITIONAL)
@@ -320,7 +323,9 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                 child = child->next;
                 continue;
             }
+#if defined(HAVE_LCD_BITMAP) || defined(HAVE_ALBUMART)
             token = (struct wps_token *)child->data;
+#endif
 #ifdef HAVE_LCD_BITMAP
             /* clear all pictures in the conditional and nested ones */
             if (token->type == SKIN_TOKEN_IMAGE_PRELOAD_DISPLAY)
@@ -650,6 +655,10 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
         img->display = -1;
         imglist = imglist->next;
     }
+
+    /* fix font ID's */
+    if (skin_viewport->parsed_fontid == 1)
+        skin_viewport->vp.font = global_status.font_id[display->screen_type];
 #endif
     
     while (line)

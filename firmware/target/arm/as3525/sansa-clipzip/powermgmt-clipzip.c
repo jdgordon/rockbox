@@ -7,7 +7,7 @@
  *                     \/            \/     \/    \/            \/
  * $Id$
  *
- * Copyright (C) 2010 Jonathan Gordon
+ * Copyright © 2008 Rafaël Carré
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,31 +20,31 @@
  ****************************************************************************/
 
 #include "config.h"
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
-#include "file.h"
-#include "settings.h"
-#include "font.h"
+/* The battery manufacturer's website shows discharge curves down to 3.0V,
+   so 'dangerous' and 'shutoff' levels of 3.4V and 3.3V should be safe.
+ */
+const unsigned short battery_level_dangerous[BATTERY_TYPES_COUNT] =
+{
+    3400
+};
 
-#ifndef _SKINFONTS_H_
-#define _SKINFONTS_H_
+const unsigned short battery_level_shutoff[BATTERY_TYPES_COUNT] =
+{
+    3300
+};
 
-#if LCD_HEIGHT > 160
-#define SKIN_FONT_SIZE (1024*10)
-#else
-#define SKIN_FONT_SIZE (1024*3)
-#endif
-#define GLYPHS_TO_CACHE 256
+/* voltages (millivolt) of 0%, 10%, ... 100% when charging disabled */
+const unsigned short percent_to_volt_discharge[BATTERY_TYPES_COUNT][11] =
+{
+    { 3300, 3653, 3701, 3735, 3768, 3790, 3833, 3900, 3966, 4056, 4140 }
+};
 
-void skin_font_init(void);
+#if CONFIG_CHARGING
+/* voltages (millivolt) of 0%, 10%, ... 100% when charging enabled */
+const unsigned short percent_to_volt_charge[11] =
+{
+    3427, 3786, 3842, 3877, 3896, 3924, 3971, 4028, 4084, 4161, 4190
+};
+#endif /* CONFIG_CHARGING */
 
-/* load a font into the skin buffer. return the font id. 
- * reserve room for glyphs glyphs */
-int skin_font_load(char* font_name, int glyphs);
-
-/* unload a skin font. If a font has been loaded more than once it wont actually
- * be unloaded untill all references have been unloaded */
-void skin_font_unload(int font_id);
-#endif

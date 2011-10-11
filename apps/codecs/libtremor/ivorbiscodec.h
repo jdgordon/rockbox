@@ -59,7 +59,13 @@ typedef struct vorbis_info{
 typedef struct vorbis_dsp_state{
   vorbis_info *vi;
 
-  ogg_int32_t **pcm;
+  ogg_int32_t *residues[2];
+  ogg_int32_t *floors;
+  ogg_int32_t *saved;
+  ogg_int32_t *saved_ptr[CHANNELS];
+
+  int ri;
+
   ogg_int32_t **pcmb;
   ogg_int32_t **pcmret;
   int      pcm_storage;
@@ -71,23 +77,15 @@ typedef struct vorbis_dsp_state{
   long lW;
   long W;
   long nW;
-  long centerW;
 
   ogg_int64_t granulepos;
   ogg_int64_t sequence;
 
   void       *backend_state;
-  
-  ogg_int32_t *first_pcm;       /* PCM buffer (for normal RAM or IRAM)*/
-#ifdef TREMOR_USE_IRAM
-  ogg_int32_t *iram_double_pcm; /* PCM 2nd buffer for IRAM */
-#endif
-  bool reset_pcmb;
 } vorbis_dsp_state;
 
 typedef struct vorbis_block{
   /* necessary stream state for linking to the framing abstraction */
-  ogg_int32_t  **pcm;       /* this is a pointer into local storage */ 
   oggpack_buffer opb;
   
   long  lW;
@@ -156,20 +154,20 @@ typedef struct vorbis_comment{
 extern void     vorbis_info_init(vorbis_info *vi);
 extern void     vorbis_info_clear(vorbis_info *vi);
 extern int      vorbis_info_blocksize(vorbis_info *vi,int zo);
+/*
 extern void     vorbis_comment_init(vorbis_comment *vc);
 extern void     vorbis_comment_add(vorbis_comment *vc, char *comment); 
 extern void     vorbis_comment_add_tag(vorbis_comment *vc, 
                                        char *tag, char *contents);
 extern void     vorbis_comment_clear(vorbis_comment *vc);
-
+*/
 extern int      vorbis_block_init(vorbis_dsp_state *v, vorbis_block *vb);
 extern int      vorbis_block_clear(vorbis_block *vb);
 extern void     vorbis_dsp_clear(vorbis_dsp_state *v);
 
 /* Vorbis PRIMITIVES: synthesis layer *******************************/
 extern int      vorbis_synthesis_idheader(ogg_packet *op);
-extern int      vorbis_synthesis_headerin(vorbis_info *vi,vorbis_comment *vc,
-                                          ogg_packet *op);
+extern int      vorbis_synthesis_headerin(vorbis_info *vi,ogg_packet *op);
 
 extern int      vorbis_synthesis_init(vorbis_dsp_state *v,vorbis_info *vi);
 extern int      vorbis_synthesis_restart(vorbis_dsp_state *v);

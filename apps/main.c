@@ -336,6 +336,9 @@ static void init_tagcache(void)
 
 static void init(void)
 {
+#ifdef HAVE_LCD_BITMAP
+    int i;
+#endif
     system_init();
     core_allocator_init();
     kernel_init();
@@ -347,7 +350,11 @@ static void init(void)
 #ifdef HAVE_REMOTE_LCD
     lcd_remote_init();
 #endif
+#ifdef HAVE_LCD_BITMAP
+    FOR_NB_SCREENS(i)
+        global_status.font_id[i] = FONT_SYSFIXED;
     font_init();
+#endif
     show_logo();
     button_init();
     powermgmt_init();
@@ -432,9 +439,6 @@ static void init(void)
 #endif
     cpu_boost(true);
 #endif
-    
-
-    settings_reset();
 
     i2c_init();
     
@@ -451,7 +455,13 @@ static void init(void)
 #ifdef HAVE_REMOTE_LCD
     lcd_remote_init();
 #endif
+#ifdef HAVE_LCD_BITMAP
+    FOR_NB_SCREENS(rc)
+        global_status.font_id[rc] = FONT_SYSFIXED;
     font_init();
+#endif
+    
+    settings_reset();
 
     CHART(">show_logo");
     show_logo();
@@ -656,7 +666,6 @@ static void init(void)
     tree_mem_init();
     filetype_init();
     scrobbler_init();
-    theme_init_buffer();
 
 #if CONFIG_CODEC != SWCODEC
     /* No buffer allocation (see buffer.c) may take place after the call to
