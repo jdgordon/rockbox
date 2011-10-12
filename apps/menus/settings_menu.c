@@ -75,6 +75,8 @@ MENUITEM_FUNCTION(tc_init, 0, ID2P(LANG_TAGCACHE_FORCE_UPDATE),
 MENUITEM_FUNCTION(tc_update, 0, ID2P(LANG_TAGCACHE_UPDATE),
                     (int(*)(void))tagcache_update_with_splash,
                     NULL, NULL, Icon_NOICON);
+MENUITEM_FUNCTION(tc_choose_folders, 0, ID2P(LANG_SELECT_TAGCACHE_FOLDERS),
+                    tagcache_do_config, NULL, NULL, Icon_Folder);
 MENUITEM_SETTING(runtimedb, &global_settings.runtimedb, NULL);
 MENUITEM_FUNCTION(tc_export, 0, ID2P(LANG_TAGCACHE_EXPORT),
                     (int(*)(void))tagtree_export, NULL,
@@ -83,6 +85,7 @@ MENUITEM_FUNCTION(tc_import, 0, ID2P(LANG_TAGCACHE_IMPORT),
                     (int(*)(void))tagtree_import, NULL,
                     NULL, Icon_NOICON);
 MAKE_MENU(tagcache_menu, ID2P(LANG_TAGCACHE), 0, Icon_NOICON,
+                &tc_choose_folders,
 #ifdef HAVE_TC_RAMCACHE
                 &tagcache_ram,
 #endif

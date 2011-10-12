@@ -12830,3 +12830,17 @@
     multidrive_usb: "USB Hide Internal Drive"
   </voice>
 </phrase>
+<phrase>
+  id: LANG_SELECT_TAGCACHE_FOLDERS
+  desc: in the main menu and the settings menu
+  user: core
+  <source>
+    *: "Select Database Directories"
+  </source>
+  <dest>
+    *: "Select Database Directories"
+  </dest>
+  <voice>
+    *: "Select Database Directories"
+  </voice>
+</phrase>

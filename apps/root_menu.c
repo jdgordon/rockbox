@@ -156,7 +156,6 @@ static int browser(void* param)
         break;
 #ifdef HAVE_TAGCACHE
         case GO_TO_DBBROWSER:
-            tagcache_do_config();
             if (!tagcache_is_usable())
             {
                 bool reinit_attempted = false;
@@ -200,6 +199,7 @@ static int browser(void* param)
                             screens[i].clear_display();
 
                         /* Start initialisation */
+                        tagcache_do_config();
                         tagcache_rebuild();
                     }
 

@@ -26,6 +26,8 @@
 #include "filetypes.h"
 #include "language.h"
 #include "list.h"
+#include "lang.h"
+#include "settings.h"
 #include "plugin.h"
 
 
@@ -262,7 +264,7 @@ static enum themable_icons folder_get_icon(int selected_item, void * data)
     }
     return Icon_NOICON;
 }
-
+static bool list_dirty;
 static int folder_action_callback(int action, struct gui_synclist *list)
 {
     struct folder *root = (struct folder*)list->data;
@@ -287,6 +289,7 @@ static int folder_action_callback(int action, struct gui_synclist *list)
                         SELECTED : EXPANDED;
         }
         list->nb_items = count_items(root);
+        list_dirty = true;
         return ACTION_REDRAW;
     }
     return action;
@@ -352,7 +355,6 @@ static void save_folders(struct folder *root, int fd)
     }
 }
         
-
 void tagcache_do_config(void)
 {
     struct folder *root;
@@ -371,17 +373,19 @@ void tagcache_do_config(void)
         fast_readline(fd, buf, sizeof buf, root, readline_callback);
         close(fd);
     }
+    list_dirty = false;
 
-   // while (1)
+    simplelist_info_init(&info, str(LANG_SELECT_TAGCACHE_FOLDERS),
+            count_items(root), root);
+    info.get_name = folder_get_name;
+    info.action_callback = folder_action_callback;
+    info.get_icon = folder_get_icon;
+    simplelist_show_list(&info);
+
+    if (list_dirty && yesno_pop(ID2P(LANG_SAVE_CHANGES)))
     {
-        simplelist_info_init(&info, "hello", count_items(root), root);
-        info.get_name = folder_get_name;
-        info.action_callback = folder_action_callback;
-        info.get_icon = folder_get_icon;
-        simplelist_show_list(&info);
+        fd = open_utf8(ROCKBOX_DIR "/database.txt", O_CREAT|O_TRUNC|O_RDWR);
+        if (fd >= 0)
+            save_folders(root, fd);
     }
-    fd = open_utf8(ROCKBOX_DIR "/database.txt", O_CREAT|O_TRUNC|O_RDWR);
-    if (fd >= 0)
-        save_folders(root, fd);
-    
 }
