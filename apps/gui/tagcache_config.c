@@ -329,6 +329,30 @@ static int readline_callback(int n, char *buf, void *parameters)
     return 0;
 }
 
+static void save_folders(struct folder *root, int fd)
+{
+    int i = 0;
+
+    while (i < root->children_count)
+    {
+        struct child *this = &root->children[i];
+        if (this->state == SELECTED)
+        {
+            if (this->folder)
+                snprintf(buffer_front, buffer_end - buffer_front,
+                        "%s\n", get_full_path(this->folder));
+            else
+                snprintf(buffer_front, buffer_end - buffer_front,
+                        "%s/%s\n", get_full_path(root), this->name);
+            write(fd, buffer_front, strlen(buffer_front));
+        }
+        else if (this->state == EXPANDED)
+            save_folders(this->folder, fd);
+        i++;
+    }
+}
+        
+
 void tagcache_do_config(void)
 {
     struct folder *root;
@@ -356,5 +380,8 @@ void tagcache_do_config(void)
         info.get_icon = folder_get_icon;
         simplelist_show_list(&info);
     }
+    fd = open_utf8(ROCKBOX_DIR "/database.txt", O_CREAT|O_TRUNC|O_RDWR);
+    if (fd >= 0)
+        save_folders(root, fd);
     
 }
