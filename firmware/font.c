@@ -77,7 +77,7 @@ extern struct font sysfont;
 
 struct buflib_alloc_data {
     struct font font;
-    bool handle_locked; /* is the buflib handle currently locked? */
+    int handle_locks; /* is the buflib handle currently locked? */
     int refcount;       /* how many times has this font been loaded? */
     unsigned char buffer[];
 };
@@ -90,7 +90,7 @@ static int buflibmove_callback(int handle, void* current, void* new)
     struct buflib_alloc_data *alloc = (struct buflib_alloc_data*)current;
     ptrdiff_t diff = new - current;
 
-    if (alloc->handle_locked)
+    if (alloc->handle_locks > 0)
         return BUFLIB_CB_CANNOT_MOVE;
 
 #define UPDATE(x) if (x) { x = PTR_ADD(x, diff); }
@@ -111,7 +111,10 @@ static int buflibmove_callback(int handle, void* current, void* new)
 static void lock_font_handle(int handle, bool lock)
 {
     struct buflib_alloc_data *alloc = core_get_data(handle);
-    alloc->handle_locked = lock;
+    if ( lock )
+        alloc->handle_locks++;
+    else
+        alloc->handle_locks--;
 }
 
 static struct buflib_callbacks buflibops = {buflibmove_callback, NULL };
@@ -342,27 +345,11 @@ static struct font* font_load_cached(struct font* pf)
     return pf;
 }
 
-static void font_reset(int font_id)
-{
-    struct font *pf = pf_from_handle(buflib_allocations[font_id]);
-    // fixme
-    memset(pf, 0, sizeof(struct font));
-    pf->fd = -1;
-}
-
-
-static bool internal_load_font(int font_id, const char *path,
-                               char *buf, size_t buf_size)
+static bool internal_load_font(const char *path, char *buf, 
+                               size_t buf_size, int handle)
 {
     size_t size;
-    struct font* pf = pf_from_handle(buflib_allocations[font_id]);
-    /* save loaded glyphs */
-    glyph_cache_save(pf);
-    /* Close font file handle */
-    if (pf->fd >= 0)
-        close(pf->fd);
-
-    font_reset(font_id);
+    struct font* pf = pf_from_handle(handle);
 
     /* open and read entire font file*/
     pf->fd = open(path, O_RDONLY|O_BINARY);
@@ -453,8 +440,7 @@ static int alloc_and_init(int font_idx, const char* name, size_t size)
         return handle;
     pdata = core_get_data(handle);
     pf = &pdata->font;
-    font_reset(font_idx);
-    pdata->handle_locked = false;
+    pdata->handle_locks = 0;
     pdata->refcount = 1;
     pf->buffer_position = pf->buffer_start = buffer_from_handle(handle);
     pf->buffer_size = size;
@@ -475,7 +461,7 @@ int font_load_ex(const char *path, size_t buffer_size)
 {
     int font_id = find_font_index(path);
     char *buffer;
-    int *handle;
+    int handle;
 
     if (font_id > FONT_SYSFIXED)
     {
@@ -516,32 +502,32 @@ int font_load_ex(const char *path, size_t buffer_size)
 
     for (font_id = FONT_FIRSTUSERFONT; font_id < MAXFONTS; font_id++)
     {
-        handle = &buflib_allocations[font_id];
-        if (*handle < 0)
+        handle = buflib_allocations[font_id];
+        if (handle < 0)
         {
             break;
         }
     }
-    handle = &buflib_allocations[font_id];
-    *handle = alloc_and_init(font_id, path, buffer_size);
-    if (*handle < 0)
+    handle = alloc_and_init(font_id, path, buffer_size);
+    if (handle < 0)
         return -1;
 
     if (handle_for_glyphcache < 0)
-        handle_for_glyphcache = *handle;
+        handle_for_glyphcache = handle;
 
-    buffer = buffer_from_handle(*handle);
-    lock_font_handle(*handle, true);
+    buffer = buffer_from_handle(handle);
+    lock_font_handle(handle, true);
 
-    if (!internal_load_font(font_id, path, buffer, buffer_size))
+    if (!internal_load_font(path, buffer, buffer_size, handle))
     {
-        lock_font_handle(*handle, false);
-        core_free(*handle);
-        *handle = -1;
+        lock_font_handle(handle, false);
+        core_free(handle);
+        buflib_allocations[font_id] = -1;
         return -1;
     }
         
-    lock_font_handle(*handle, false);
+    lock_font_handle(handle, false);
+    buflib_allocations[font_id] = handle;
     //printf("%s -> [%d] -> %d\n", path, font_id, *handle);
     return font_id; /* success!*/
 }
