@@ -19,15 +19,19 @@
  *
  ****************************************************************************/
 
+#include <stdbool.h>
+#include "config.h"
 #include "backlight-target.h"
 #include "lcd.h"
 #include "as3525v2.h"
 #include "ascodec-target.h"
 
-void _backlight_init()
+bool _backlight_init()
 {
     /* GPIO B1 controls backlight */
     GPIOB_DIR |= (1 << 1);
+    
+    return true;
 }
 
 void _backlight_on(void)

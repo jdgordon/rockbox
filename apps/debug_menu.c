@@ -293,7 +293,7 @@ static void dbg_audio_task(void)
 static bool dbg_buffering_thread(void)
 {
     int button;
-    int line, i;    
+    int line;    
     bool done = false;
     size_t bufused;
     size_t bufsize = pcmbuf_get_bufsize();
@@ -429,14 +429,21 @@ static int bf_action_cb(int action, struct gui_synclist* list)
 {
     if (action == ACTION_STD_OK)
     {
-        splash(HZ/1, "Attempting a 64k allocation");
-        int handle = core_alloc("test", 64<<10);
-        splash(HZ/2, (handle > 0) ? "Success":"Fail");
-        /* for some reason simplelist doesn't allow adding items here if
-         * info.get_name is given, so use normal list api */
-        gui_synclist_set_nb_items(list, core_get_num_blocks());
-        if (handle > 0)
-            core_free(handle);
+        if (gui_synclist_get_sel_pos(list) == 0 && core_test_free())
+        {
+            splash(HZ, "Freed test handle. New alloc should trigger compact");
+        }
+        else
+        {
+            splash(HZ/1, "Attempting a 64k allocation");
+            int handle = core_alloc("test", 64<<10);
+            splash(HZ/2, (handle > 0) ? "Success":"Fail");
+            /* for some reason simplelist doesn't allow adding items here if
+             * info.get_name is given, so use normal list api */
+            gui_synclist_set_nb_items(list, core_get_num_blocks());
+            if (handle > 0)
+                core_free(handle);
+        }
         action = ACTION_REDRAW;
     }
     else if (action == ACTION_NONE)
@@ -2113,7 +2120,6 @@ static const struct the_menu_item menuitems[] = {
     };
 static int menu_action_callback(int btn, struct gui_synclist *lists)
 {
-   int i;
     if (btn == ACTION_STD_OK)
     {
         FOR_NB_SCREENS(i)

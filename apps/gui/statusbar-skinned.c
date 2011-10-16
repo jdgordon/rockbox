@@ -125,6 +125,10 @@ struct viewport *sb_skin_get_info_vp(enum screen_type screen)
         viewportmanager_theme_undo(screen, true);
     }
     vp = skin_find_item(infovp_label[screen], SKIN_FIND_UIVP, data);
+    if (!vp)
+        return NULL;
+    if (vp->parsed_fontid == 1)
+        vp->vp.font = global_status.font_id[screen];
     return &vp->vp;
 }
 
@@ -264,7 +268,6 @@ char* sb_create_from_settings(enum screen_type screen)
 
 void sb_skin_init(void)
 {
-    int i;
     FOR_NB_SCREENS(i)
     {
         oldinfovp_label[i] = NULL;

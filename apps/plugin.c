@@ -174,7 +174,7 @@ static const struct plugin_api rockbox_api = {
     lcd_update_rect,
     lcd_set_drawmode,
     lcd_get_drawmode,
-    lcd_setfont,
+    screen_helper_setfont,
     lcd_drawpixel,
     lcd_drawline,
     lcd_hline,
@@ -230,6 +230,7 @@ static const struct plugin_api rockbox_api = {
 #endif
     font_get_bits,
     font_load,
+    font_unload,
     font_get,
     font_getstringsize,
     font_get_width,
@@ -808,7 +809,6 @@ static const struct plugin_api rockbox_api = {
 
 int plugin_load(const char* plugin, const void* parameter)
 {
-    int rc, i;
     struct plugin_header *p_hdr;
     struct lc_header     *hdr;
 
@@ -888,7 +888,7 @@ int plugin_load(const char* plugin, const void* parameter)
     open_files = 0;
 #endif
 
-    rc = p_hdr->entry_point(parameter);
+    int rc = p_hdr->entry_point(parameter);
     
     tree_unlock_cache(tree_get_context());
     pop_current_activity();
@@ -905,7 +905,7 @@ int plugin_load(const char* plugin, const void* parameter)
 #endif
 
 #ifdef HAVE_LCD_BITMAP
-    lcd_setfont(FONT_UI);
+    screen_helper_setfont(FONT_UI);
 #if LCD_DEPTH > 1
 #ifdef HAVE_LCD_COLOR
     lcd_set_drawinfo(DRMODE_SOLID, global_settings.fg_color,

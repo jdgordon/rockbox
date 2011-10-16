@@ -320,6 +320,17 @@
 #define OSCILLOSCOPE_VOL_UP       BUTTON_UP
 #define OSCILLOSCOPE_VOL_DOWN     BUTTON_DOWN
 
+#elif CONFIG_KEYPAD == SANSA_FUZEPLUS_PAD
+#define OSCILLOSCOPE_QUIT         BUTTON_POWER
+#define OSCILLOSCOPE_DRAWMODE     BUTTON_SELECT
+#define OSCILLOSCOPE_ADVMODE      BUTTON_BACK
+#define OSCILLOSCOPE_ORIENTATION  (BUTTON_BACK|BUTTON_REPEAT)
+#define OSCILLOSCOPE_PAUSE        BUTTON_PLAYPAUSE
+#define OSCILLOSCOPE_SPEED_UP     BUTTON_LEFT
+#define OSCILLOSCOPE_SPEED_DOWN   BUTTON_RIGHT
+#define OSCILLOSCOPE_VOL_UP       BUTTON_VOL_UP
+#define OSCILLOSCOPE_VOL_DOWN     BUTTON_VOL_DOWN
+
 #else
 #error No keymap defined!
 #endif
@@ -420,7 +431,7 @@ int font_height = 8;
 
 /* implementation */
 
-void anim_horizontal(int cur_left, int cur_right)
+static void anim_horizontal(int cur_left, int cur_right)
 {
     int cur_x, x;
     int left, right, dl, dr;
@@ -598,7 +609,7 @@ void anim_horizontal(int cur_left, int cur_right)
     last_pos = cur_x;
 }
 
-void anim_vertical(int cur_left, int cur_right)
+static void anim_vertical(int cur_left, int cur_right)
 {
     int cur_y, y;
     int left, right, dl, dr;
@@ -773,7 +784,7 @@ void anim_vertical(int cur_left, int cur_right)
     last_pos = cur_y;
 }
 
-void cleanup(void)
+static void cleanup(void)
 {
 #if LCD_DEPTH > 1
     rb->lcd_set_foreground(LCD_DEFAULT_FG);

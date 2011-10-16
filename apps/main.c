@@ -152,7 +152,6 @@ int main(void) INIT_ATTR MAIN_NORETURN_ATTR;
 int main(void)
 {
 #endif
-    int i;
     CHART(">init");
     init();
     CHART("<init");
@@ -347,7 +346,11 @@ static void init(void)
 #ifdef HAVE_REMOTE_LCD
     lcd_remote_init();
 #endif
+#ifdef HAVE_LCD_BITMAP
+    FOR_NB_SCREENS(i)
+        global_status.font_id[i] = FONT_SYSFIXED;
     font_init();
+#endif
     show_logo();
     button_init();
     powermgmt_init();
@@ -432,9 +435,6 @@ static void init(void)
 #endif
     cpu_boost(true);
 #endif
-    
-
-    settings_reset();
 
     i2c_init();
     
@@ -451,7 +451,13 @@ static void init(void)
 #ifdef HAVE_REMOTE_LCD
     lcd_remote_init();
 #endif
+#ifdef HAVE_LCD_BITMAP
+    FOR_NB_SCREENS(i)
+        global_status.font_id[i] = FONT_SYSFIXED;
     font_init();
+#endif
+    
+    settings_reset();
 
     CHART(">show_logo");
     show_logo();
@@ -656,7 +662,6 @@ static void init(void)
     tree_mem_init();
     filetype_init();
     scrobbler_init();
-    theme_init_buffer();
 
 #if CONFIG_CODEC != SWCODEC
     /* No buffer allocation (see buffer.c) may take place after the call to

@@ -38,10 +38,10 @@
 #include "led.h"
 #include "appevents.h"
 #include "usb_screen.h"
+#include "skin_engine/skin_engine.h"
 
 #ifdef HAVE_LCD_BITMAP
 #include "bitmaps/usblogo.h"
-#include "skin_engine/skin_fonts.h"
 #endif
 
 #ifdef HAVE_REMOTE_LCD
@@ -184,7 +184,6 @@ static void usb_screen_fix_viewports(struct screen *screen,
 
 static void usb_screens_draw(struct usb_screen_vps_t *usb_screen_vps_ar)
 {
-    int i;
     FOR_NB_SCREENS(i)
     {
         struct screen *screen = &screens[i];
@@ -242,7 +241,6 @@ static void usb_screens_draw(struct usb_screen_vps_t *usb_screen_vps_ar)
 
 void gui_usb_screen_run(bool early_usb)
 {
-    int i;
     struct usb_screen_vps_t usb_screen_vps_ar[NB_SCREENS];
 #if defined HAVE_TOUCHSCREEN
     enum touchscreen_mode old_mode = touchscreen_get_mode();
@@ -265,11 +263,12 @@ void gui_usb_screen_run(bool early_usb)
     {
         /* The font system leaves the .fnt fd's open, so we need for force close them all */
 #ifdef HAVE_LCD_BITMAP
-        font_reset(NULL);
-#ifdef HAVE_REMOTE_LCD
-        font_load_remoteui(NULL);
-#endif
-        skin_font_init(); /* unload all the skin fonts */
+        FOR_NB_SCREENS(i)
+        {
+            font_unload(global_status.font_id[i]);
+            global_status.font_id[i] = -1;
+        }
+        skin_unload_all();
 #endif
     }
 

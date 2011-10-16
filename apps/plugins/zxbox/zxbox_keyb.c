@@ -222,6 +222,15 @@
 #define KBD_UP     BUTTON_UP
 #define KBD_DOWN   BUTTON_DOWN
 
+#elif CONFIG_KEYPAD == SANSA_FUZEPLUS_PAD
+
+#define KBD_SELECT BUTTON_SELECT
+#define KBD_ABORT  BUTTON_BACK
+#define KBD_LEFT   BUTTON_LEFT
+#define KBD_RIGHT  BUTTON_RIGHT
+#define KBD_UP     BUTTON_UP
+#define KBD_DOWN   BUTTON_DOWN
+
 #endif
 
 #ifdef HAVE_TOUCHSCREEN
@@ -274,7 +283,7 @@ struct keyboard_parameters param[NB_SCREENS];
 int zx_kbd_input(char* text/*, int buflen*/)
 {
     bool done = false;
-    int i, j, k, w, l;
+    int i, j, k, w;
     int text_w = 0;
 #ifdef ZX_WRITE_OUT_TEXT
     int editpos, len_utf8;

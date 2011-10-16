@@ -552,7 +552,7 @@ void fat_size(IF_MV2(int volume,) unsigned long* size, unsigned long* free)
             *size = num_clusters * secperclus / 2 * (bytespersec / 512);
         if (free)
             *free = free_clusters * secperclus / 2 * (bytespersec / 512);
-    }
+    } else
 #elif HAVE_STATVFS
     struct statvfs vfs;
 

@@ -57,6 +57,8 @@
 #include <windows.h>
 #endif
 
+QList<QTranslator*> RbUtilQt::translators;
+
 RbUtilQt::RbUtilQt(QWidget *parent) : QMainWindow(parent)
 {
     // startup log
@@ -73,6 +75,16 @@ RbUtilQt::RbUtilQt(QWidget *parent) : QMainWindow(parent)
     ui.setupUi(this);
 #if defined(Q_OS_LINUX)
     QIcon windowIcon(":/icons/rockbox-clef.svg");
+    this->setWindowIcon(windowIcon);
+#endif
+#if defined(Q_OS_WIN32)
+    QIcon windowIcon = QIcon();
+    windowIcon.addFile(":/icons/rockbox-16.png");
+    windowIcon.addFile(":/icons/rockbox-32.png");
+    windowIcon.addFile(":/icons/rockbox-48.png");
+    windowIcon.addFile(":/icons/rockbox-64.png");
+    windowIcon.addFile(":/icons/rockbox-128.png");
+    windowIcon.addFile(":/icons/rockbox-256.png");
     this->setWindowIcon(windowIcon);
 #endif
 #if defined(Q_OS_MACX)
@@ -1367,6 +1379,20 @@ void RbUtilQt::downloadUpdateDone(bool error)
         else {
             ui.statusbar->showMessage(tr("Rockbox Utility is up to date."), 5000);
         }
+    }
+}
+
+
+void RbUtilQt::changeEvent(QEvent *e)
+{
+    if(e->type() == QEvent::LanguageChange) {
+        ui.retranslateUi(this);
+        buildInfo.open();
+        ServerInfo::readBuildInfo(buildInfo.fileName());
+        buildInfo.close();
+        updateDevice();
+    } else {
+        QMainWindow::changeEvent(e);
     }
 }
 

@@ -217,6 +217,14 @@
 #define BTN_DOWN         BUTTON_DOWN
 #define BTN_PLAY         BUTTON_PLAY
 
+#elif CONFIG_KEYPAD == SANSA_FUZEPLUS_PAD
+#define BTN_QUIT         BUTTON_POWER
+#define BTN_RIGHT        BUTTON_RIGHT
+#define BTN_LEFT         BUTTON_LEFT
+#define BTN_UP           BUTTON_UP
+#define BTN_DOWN         BUTTON_DOWN
+#define BTN_PLAY         BUTTON_PLAYPAUSE
+
 #else
 #error No keymap defined!
 #endif
@@ -470,7 +478,7 @@ enum plugin_status plugin_start(const void* parameter)
         rb->splash(HZ*2, " Play .MID file ");
         return PLUGIN_OK;
     }
-    rb->lcd_setfont(0);
+    rb->lcd_setfont(FONT_SYSFIXED);
 
 #if defined(HAVE_ADJUSTABLE_CPU_FREQ)
     rb->cpu_boost(true);

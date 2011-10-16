@@ -28,9 +28,20 @@ int  core_get_num_blocks(void);
 void core_print_block_at(int block_num, char* buf, size_t bufsize);
 #endif
 
+/* frees the debug test alloc created at initialization,
+ * since this is the first any further alloc should force a compaction run */
+bool core_test_free(void);
+
 static inline void* core_get_data(int handle)
 {
     extern struct buflib_context core_ctx;
     return buflib_get_data(&core_ctx, handle);
 }
+
+static inline const char* core_get_name(int handle)
+{
+    extern struct buflib_context core_ctx;
+    return buflib_get_name(&core_ctx, handle);
+}
+
 #endif /* __CORE_ALLOC_H__ */

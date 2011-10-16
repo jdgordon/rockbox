@@ -245,6 +245,15 @@ CONFIG_KEYPAD == MROBE500_PAD
 #define PUZZLE_SHUFFLE BUTTON_ENTER
 #define PUZZLE_PICTURE BUTTON_PLAY
 
+#elif CONFIG_KEYPAD == SANSA_FUZEPLUS_PAD
+#define PUZZLE_QUIT    BUTTON_POWER
+#define PUZZLE_LEFT    BUTTON_LEFT
+#define PUZZLE_RIGHT   BUTTON_RIGHT
+#define PUZZLE_UP      BUTTON_UP
+#define PUZZLE_DOWN    BUTTON_DOWN
+#define PUZZLE_SHUFFLE BUTTON_PLAYPAUSE
+#define PUZZLE_PICTURE BUTTON_SELECT
+
 #else
 #error No keymap defined!
 #endif
@@ -350,7 +359,7 @@ static const fb_data * puzzle_bmp_ptr;
 static const char * initial_bmp_path=NULL;
 
 #ifdef HAVE_ALBUMART
-const char * get_albumart_bmp_path(void)
+static const char * get_albumart_bmp_path(void)
 {
     struct mp3entry* track = rb->audio_current_track();
 
@@ -365,10 +374,12 @@ const char * get_albumart_bmp_path(void)
 }
 #endif
 
-const char * get_random_bmp_path(void)
+#if 0 /* unused */
+static const char * get_random_bmp_path(void)
 {
     return(initial_bmp_path);
 }
+#endif
 
 static bool load_resize_bitmap(void)
 {

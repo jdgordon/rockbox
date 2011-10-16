@@ -63,7 +63,6 @@
 int mmc_remove_request(void)
 {
     struct queue_event ev;
-    int i;
     FOR_NB_SCREENS(i)
         screens[i].clear_display();
     splash(0, ID2P(LANG_REMOVE_MMC));
@@ -347,7 +346,6 @@ bool set_time_screen(const char* title, struct tm *tm)
     struct viewport viewports[NB_SCREENS];
     bool done = false, usb = false;
     int cursorpos = 0;
-    unsigned int s;
     unsigned char offsets_ptr[] =
         { OFF_HOURS, OFF_MINUTES, OFF_SECONDS, OFF_YEAR, 0, OFF_DAY };
 
@@ -774,10 +772,13 @@ bool browse_id3(void)
     gui_synclist_draw(&id3_lists);
     while (true) {
         key = get_action(CONTEXT_LIST,HZ/2);
-        if(key!=ACTION_NONE && key!=ACTION_UNKNOWN
-        && !gui_synclist_do_button(&id3_lists, &key,LIST_WRAP_UNLESS_HELD))
+        if(!gui_synclist_do_button(&id3_lists, &key,LIST_WRAP_UNLESS_HELD))
         {
-            return(default_event_handler(key) == SYS_USB_CONNECTED);
+            if (key == ACTION_STD_OK || key == ACTION_STD_CANCEL)
+                return false;
+            else if (key == ACTION_STD_MENU ||
+                        default_event_handler(key) == SYS_USB_CONNECTED)
+                return true;
         }
     }
 }
