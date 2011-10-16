@@ -4269,22 +4269,79 @@ static bool check_deleted_files(void)
     
     return true;
 }
+#include "string.h"
+#include "misc.h"
+struct scanfolder {
+    struct scanfolder *next;
+    char name[0];
+} *head = NULL;
+static size_t scanfolder_buf_size;
+static char * scanfolder_buf;
+static int readline_callback(int n, char *buf, void *parameters)
+{
+    (void)n;
+    (void)parameters;
+    struct scanfolder *this = head;
+    size_t size = (strlen(buf) + sizeof(struct scanfolder) + 3) & ~3;
+    if (size >= scanfolder_buf_size)
+        return 1;
+    if (!this)
+    {
+        head = scanfolder_buf;
+        scanfolder_buf += size;
+        scanfolder_buf_size -= size;
+        memcpy(head->name, buf, strlen(buf));
+        head->next = NULL;
+        return 0;
+    }
+    while (this->next)
+        this = this->next;
+    this->next = scanfolder_buf;
+    scanfolder_buf += size;
+    scanfolder_buf_size -= size;
+    memcpy(this->name, buf, strlen(buf));
+    this->next = NULL;
+    return 0;
+}
 
-
+static void tagcache_load_scandirs(void)
+{
+    int fd;
+    char buf[512];
+    
+    scanfolder_buf = (char*)plugin_get_buffer(&scanfolder_buf_size);
+    fd = open_utf8(ROCKBOX_DIR "/database.txt", O_RDONLY);
+    if (fd >= 0)
+    {
+        fast_readline(fd, buf, sizeof buf, NULL, readline_callback);
+        close(fd);
+    }
+}
+    
+    
 /* Note that this function must not be inlined, otherwise the whole point
  * of having the code in a separate function is lost.
  */
 static void __attribute__ ((noinline)) check_ignore(const char *dirname,
     int *ignore, int *unignore)
 {
-    char newpath[MAX_PATH];
-
-    /* check for a database.ignore file */
-    snprintf(newpath, MAX_PATH, "%s/database.ignore", dirname);
-    *ignore = file_exists(newpath);
-    /* check for a database.unignore file */
-    snprintf(newpath, MAX_PATH, "%s/database.unignore", dirname);
-    *unignore = file_exists(newpath);
+    struct scanfolder *this = head;
+    int len;
+    if (!strcmp("/", dirname))
+    {
+        *ignore = 0;
+        return;
+    }    
+    *ignore = 1;
+    *unignore = 0;
+    while (*ignore && this)
+    {
+        len = strlen(this->name);
+        if (!strncmp(dirname, this->name, len) && 
+            (this->name[len] == '/' || this->name[len] == '\0'))
+            *ignore = 0;
+        this = this->next;
+    }
 }
 
 static struct search_roots_ll {
@@ -4397,6 +4454,11 @@ static bool check_dir(const char *dirname, int add_files)
     /* don't do anything if both ignore and unignore are there */
     if (ignore != unignore)
         add_files = unignore;
+    if (ignore)
+    {
+        closedir(dir);
+        return true;
+    }
 
     /* Recursively scan the dir. */
 #ifdef __PCTOOL__
@@ -4427,7 +4489,7 @@ static bool check_dir(const char *dirname, int add_files)
 
         processed_dir_count++;
         if (info.attribute & ATTR_DIRECTORY)
-#ifndef SIMULATOR
+#if 0 //ifndef SIMULATOR
         {   /* don't follow symlinks to dirs, but try to add it as a search root
              * this makes able to avoid looping in recursive symlinks */
             if (info.attribute & ATTR_LINK)
@@ -4515,6 +4577,7 @@ void tagcache_build(const char *path)
     memset(&header, 0, sizeof(struct tagcache_header));
     write(cachefd, &header, sizeof(struct tagcache_header));
 
+    tagcache_load_scandirs();
     ret = true;
     roots_ll.path = path;
     roots_ll.next = NULL;
