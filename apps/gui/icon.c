@@ -178,7 +178,7 @@ static int buflib_move_callback(int handle, void* current, void* new)
 {
     (void)current;
     (void)new;
-    int i, j;
+    int i;
     FOR_NB_SCREENS(j)
     {
         for (i=0; i<Iconset_Count; i++)
@@ -239,7 +239,7 @@ static void load_icons(const char* filename, enum Iconset iconset,
 
 void icons_init(void)
 {
-    int i, j;
+    int i;
     FOR_NB_SCREENS(j)
     {
         for (i=0; i<Iconset_Count; i++)
