@@ -7,7 +7,6 @@
  *                     \/            \/     \/    \/            \/
  *
  *   Copyright (C) 2007 by Dominik Riebeling
- *   $Id$
  *
  * All files in this archive are subject to the GNU General Public License.
  * See the file COPYING in the source tree root for full license agreement.
@@ -294,9 +293,15 @@ void RbUtilQt::about()
     QFile licence(":/docs/gpl-2.0.html");
     licence.open(QIODevice::ReadOnly);
     QTextStream c(&licence);
-    QString cline = c.readAll();
-    about.browserLicense->insertHtml(cline);
+    about.browserLicense->insertHtml(c.readAll());
     about.browserLicense->moveCursor(QTextCursor::Start, QTextCursor::MoveAnchor);
+
+    QFile speexlicense(":/docs/COPYING.SPEEX");
+    speexlicense.open(QIODevice::ReadOnly);
+    QTextStream s(&speexlicense);
+    about.browserSpeexLicense->insertHtml("<pre>" + s.readAll() + "</pre>");
+    about.browserSpeexLicense->moveCursor(QTextCursor::Start, QTextCursor::MoveAnchor);
+
     QFile credits(":/docs/CREDITS");
     credits.open(QIODevice::ReadOnly);
     QTextStream r(&credits);

@@ -88,6 +88,7 @@ struct buflib_alloc_data {
 };
 static int buflib_allocations[MAXFONTS];
 
+static int font_ui = -1;
 static int cache_fd;
 static struct font* cache_pf;
 
@@ -122,6 +123,14 @@ static void lock_font_handle(int handle, bool lock)
         alloc->handle_locks++;
     else
         alloc->handle_locks--;
+}
+
+void font_lock(int font_id, bool lock)
+{
+    if( font_id == FONT_SYSFIXED )
+        return;
+    if( buflib_allocations[font_id] >= 0 )
+        lock_font_handle(buflib_allocations[font_id], lock);
 }
 
 static struct buflib_callbacks buflibops = {buflibmove_callback, NULL };
@@ -394,7 +403,22 @@ static bool internal_load_font(int font_id, const char *path, char *buf,
             return false;
         }
 
+        /* Cheat to get sector cache for different parts of font       *
+         * file while preloading glyphs. Without this the disk head    *
+         * thrashes between the width, offset, and bitmap data         *
+         * in glyph_cache_load().                                      */         
+        pf->fd_width  = open(path, O_RDONLY|O_BINARY);
+        pf->fd_offset = open(path, O_RDONLY|O_BINARY);
+        
         glyph_cache_load(font_id);
+        
+        if(pf->fd_width >= 0)
+            close(pf->fd_width);
+        pf->fd_width = -1;
+        
+        if(pf->fd_offset >= 0)
+            close(pf->fd_offset);
+        pf->fd_offset = -1;
     }
     else
     {
@@ -402,6 +426,8 @@ static bool internal_load_font(int font_id, const char *path, char *buf,
         pf->buffer_end = pf->buffer_position + size;
         close(pf->fd);
         pf->fd = -1;
+        pf->fd_width = -1;
+        pf->fd_offset = -1;
 
         if (!font_load_header(pf))
         {
@@ -451,6 +477,8 @@ static int alloc_and_init(int font_idx, const char* name, size_t size)
     pdata->refcount = 1;
     pf->buffer_position = pf->buffer_start = buffer_from_handle(handle);
     pf->buffer_size = size;
+    pf->fd_width = -1;
+    pf->fd_offset = -1;
     return handle;
 }
 
@@ -532,7 +560,7 @@ int font_load_ex(const char *path, size_t buffer_size)
         
     lock_font_handle(handle, false);
     buflib_allocations[font_id] = handle;
-    //printf("%s -> [%d] -> %d\n", path, font_id, *handle);
+    //printf("%s -> [%d] -> %d\n", path, font_id, handle);
     return font_id; /* success!*/
 }
 int font_load(const char *path)
@@ -589,28 +617,52 @@ void font_unload_all(void)
 
 /*
  * Return a pointer to an incore font structure.
- * If the requested font isn't loaded/compiled-in,
- * decrement the font number and try again.
+ * Return the requested font, font_ui, or sysfont
  */
-struct font* font_get(int font)
+struct font* font_get(int font_id)
 {
-    struct font* pf;
-    if (font == FONT_UI)
-        font = MAXFONTS-1;
-    if (font <= FONT_SYSFIXED)
-        return &sysfont;
+    struct buflib_alloc_data *alloc;
+    struct font *pf;
+    int handle, id=-1;
 
-    while (1) {
-        if (buflib_allocations[font] > 0)
-        {
-            struct buflib_alloc_data *alloc = core_get_data(buflib_allocations[font]);
-            pf = &alloc->font;
-            if (pf && pf->height)
-                return pf;
-        }
-        if (--font < 0)
-            return &sysfont;
+    if( font_id == FONT_UI )
+        id = font_ui;
+
+    if( font_id == FONT_SYSFIXED )
+        return &sysfont;
+    
+    if( id == -1 )
+        id = font_id;
+    
+    handle = buflib_allocations[id];
+    if( handle > 0 )
+    {
+        alloc =  core_get_data(buflib_allocations[id]);
+        pf=&alloc->font;
+        if( pf && pf->height )
+            return pf;
     }
+    handle = buflib_allocations[font_ui];
+    if( handle > 0 )
+    {
+        alloc = core_get_data(buflib_allocations[font_ui]);
+        pf=&alloc->font;
+        if( pf && pf->height )
+            return pf;
+    }
+
+    return &sysfont;
+}
+
+void font_set_ui( int font_id )
+{
+    font_ui = font_id;
+    return;
+}
+
+int font_get_ui()
+{
+    return font_ui;
 }
 
 static int pf_to_handle(struct font* pf)
@@ -639,14 +691,20 @@ load_cache_entry(struct font_cache_entry* p, void* callback_data)
     int handle = pf_to_handle(pf);
     unsigned short char_code = p->_char_code;
     unsigned char tmp[2];
+    int fd;
 
     if (handle > 0)
         lock_font_handle(handle, true);
     if (pf->file_width_offset)
     {
         int width_offset = pf->file_width_offset + char_code;
-        lseek(pf->fd, width_offset, SEEK_SET);
-        read(pf->fd, &(p->width), 1);
+        /* load via different fd to get this file section cached */
+        if(pf->fd_width >=0 )
+            fd = pf->fd_width;
+        else
+            fd = pf->fd;
+        lseek(fd, width_offset, SEEK_SET);
+        read(fd, &(p->width), 1);
     }
     else
     {
@@ -658,11 +716,16 @@ load_cache_entry(struct font_cache_entry* p, void* callback_data)
     if (pf->file_offset_offset)
     {
         int32_t offset = pf->file_offset_offset + char_code * (pf->long_offset ? sizeof(int32_t) : sizeof(int16_t));
-        lseek(pf->fd, offset, SEEK_SET);
-        read (pf->fd, tmp, 2);
+        /* load via different fd to get this file section cached */
+        if(pf->fd_offset >=0 )
+            fd = pf->fd_offset;
+        else
+            fd = pf->fd;
+        lseek(fd, offset, SEEK_SET);
+        read (fd, tmp, 2);
         bitmap_offset = tmp[0] | (tmp[1] << 8);
         if (pf->long_offset) {
-            read (pf->fd, tmp, 2);
+            read (fd, tmp, 2);
             bitmap_offset |= (tmp[0] << 16) | (tmp[1] << 24);
         }
     }
@@ -927,6 +990,12 @@ void font_init(void)
 {
 }
 
+void font_lock(int font_id, bool lock)
+{
+    (void)font_id;
+    (void)lock;
+}
+
 /*
  * Bootloader only supports the built-in sysfont.
  */
@@ -935,6 +1004,18 @@ struct font* font_get(int font)
     (void)font;
     return &sysfont;
 }
+
+void font_set_ui(int font_id)
+{
+    (void)font_id;
+    return;
+}
+
+int font_get_ui()
+{
+    return FONT_SYSFIXED;
+}
+
 
 /*
  * Returns width of character
@@ -977,6 +1058,7 @@ int font_getstringsize(const unsigned char *str, int *w, int *h, int fontnumber)
     unsigned short ch;
     int width = 0;
 
+    font_lock( fontnumber, true );
     for (str = utf8decode(str, &ch); ch != 0 ; str = utf8decode(str, &ch))
     {
         if (is_diacritic(ch, NULL))
@@ -989,6 +1071,7 @@ int font_getstringsize(const unsigned char *str, int *w, int *h, int fontnumber)
         *w = width;
     if ( h )
         *h = pf->height;
+    font_lock( fontnumber, false );
     return width;
 }
 

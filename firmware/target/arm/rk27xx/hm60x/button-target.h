@@ -7,7 +7,7 @@
  *                     \/            \/     \/    \/            \/
  * $Id$
  *
- * Copyright (C) 2011 by Amaury Pouly
+ * Copyright (C) 2011 Andrew Ryabinin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,48 +18,27 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
+#ifndef _BUTTON_TARGET_H_
+#define _BUTTON_TARGET_H_
+
+#include <stdbool.h>
 #include "config.h"
-#include "system.h"
-#include "audiohw.h"
-#include "audio.h"
 
-/* TO FILL */
-const struct sound_settings_info audiohw_settings[] =
-{
-    [SOUND_VOLUME]        = {"dB", 0,  1, -74,   6, -25},
-    [SOUND_BALANCE]       = {"%",  0,  1,-100, 100,   0},
-    [SOUND_CHANNELS]      = {"",   0,  1,   0,   5,   0},
-    [SOUND_STEREO_WIDTH]  = {"%",  0,  5,   0, 250, 100},
-    [SOUND_LEFT_GAIN]     = {"dB", 1,  1,   0,  31,  23},
-    [SOUND_RIGHT_GAIN]    = {"dB", 1,  1,   0,  31,  23},
-    [SOUND_MIC_GAIN]      = {"dB", 1,  1,   0,   1,   0},
-    [SOUND_DEPTH_3D]      = {"%",   0,  1,  0,  15,   0},
-};
+void button_init_device(void);
+int button_read_device(void);
 
-void audiohw_init(void)
-{
-}
 
-void audiohw_preinit(void)
-{
-}
+#define BUTTON_UP          0x00000001
+#define BUTTON_DOWN        0x00000004
+#define BUTTON_LEFT        0x00000008
+#define BUTTON_RIGHT       0x00000010
+#define BUTTON_PLAY        0x00000020
 
-void audiohw_postinit(void)
-{
-}
 
-void audiohw_close(void)
-{
-}
+#define BUTTON_REMOTE      0
 
-void audiohw_set_recvol(int left, int right, int type)
-{
-    (void) left;
-    (void) right;
-    (void) type;
-}
 
-void audiohw_set_depth_3d(int val)
-{
-    (void) val;
-}
+#define POWEROFF_BUTTON 0x02
+#define POWEROFF_COUNT 30
+
+#endif /* _BUTTON_TARGET_H_ */

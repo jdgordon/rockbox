@@ -24,4 +24,8 @@
 #include "config.h"
 #include "cpu.h"
 
+void imx233_audioin_preinit(void);
+void imx233_audioin_postinit(void);
+void imx233_audioin_close(void);
+
 #endif /* __audioin_imx233__ */
