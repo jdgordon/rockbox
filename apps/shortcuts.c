@@ -65,6 +65,17 @@ static struct shortcut* get_shortcut(int index)
     int handle_count, handle_index;
     int current_handle = first_handle;
     struct shortcut_handle *h = NULL;
+    
+    if (first_handle == 0)
+    {
+        first_handle = core_alloc("shortcuts_head", sizeof(struct shortcut_handle));
+        if (first_handle <= 0)
+            return NULL;
+        h = core_get_data(first_handle);
+        h->next_handle = 0;
+        current_handle = first_handle;
+    }
+
     handle_count = index/SHORTCUTS_PER_HANDLE + 1;
     handle_index = index%SHORTCUTS_PER_HANDLE;
     do {
@@ -77,7 +88,7 @@ static struct shortcut* get_shortcut(int index)
         char buf[32];
         snprintf(buf, sizeof buf, "shortcuts_%d", index/SHORTCUTS_PER_HANDLE);
         h->next_handle = core_alloc(buf, sizeof(struct shortcut_handle));
-        if (h->next_handle == 0)
+        if (h->next_handle <= 0)
             return NULL;
         h = core_get_data(h->next_handle);
         h->next_handle = 0;
@@ -245,7 +256,7 @@ void shortcuts_init(void)
     if (fd < 0)
         return;
     first_handle = core_alloc("shortcuts_head", sizeof(struct shortcut_handle));
-    if (first_handle == 0)
+    if (first_handle <= 0)
         return;
     h = core_get_data(first_handle);
     h->next_handle = 0;
