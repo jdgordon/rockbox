@@ -260,8 +260,6 @@ static void extract_section(int data_sec, char name[5], byte *buf, int size, con
                 &buf[pos + sizeof(struct sb_instruction_load_t)]);
 
             pos += load->len + sizeof(struct sb_instruction_load_t);
-            // unsure about rounding
-            pos = ROUND_UP(pos, 16);
         }
         else if(hdr->opcode == SB_INST_FILL)
         {
@@ -283,8 +281,6 @@ static void extract_section(int data_sec, char name[5], byte *buf, int size, con
             elf_add_fill_section(&elf, fill->addr, fill->len, fill->pattern);
 
             pos += sizeof(struct sb_instruction_fill_t);
-            // fixme: useless as pos is a multiple of 16 and fill struct is 4-bytes wide ?
-            pos = ROUND_UP(pos, 16);
         }
         else if(hdr->opcode == SB_INST_CALL ||
                 hdr->opcode == SB_INST_JUMP)
@@ -311,8 +307,6 @@ static void extract_section(int data_sec, char name[5], byte *buf, int size, con
             elf_init(&elf);
 
             pos += sizeof(struct sb_instruction_call_t);
-            // fixme: useless as pos is a multiple of 16 and call struct is 4-bytes wide ?
-            pos = ROUND_UP(pos, 16);
         }
         else if(hdr->opcode == SB_INST_MODE)
         {
@@ -325,12 +319,20 @@ static void extract_section(int data_sec, char name[5], byte *buf, int size, con
             color(OFF);
             pos += sizeof(struct sb_instruction_mode_t);
         }
+        else if(hdr->opcode == SB_INST_NOP)
+        {
+            color(RED);
+            printf("NOOP\n");
+            pos += sizeof(struct sb_instruction_mode_t);
+        }
         else
         {
             color(RED);
             printf("Unknown instruction %d at address 0x%08lx\n", hdr->opcode, (unsigned long)pos);
             break;
         }
+
+        pos = ROUND_UP(pos, BLOCK_SIZE);
     }
 
     if(!elf_is_empty(&elf))
@@ -370,8 +372,10 @@ static void extract(unsigned long filesize)
 
     if(memcmp(sb_header->signature, "STMP", 4) != 0)
         bugp("Bad signature");
+    /*
     if(sb_header->image_size * BLOCK_SIZE > filesize)
         bugp("File size mismatch");
+    */
     if(sb_header->header_size * BLOCK_SIZE != sizeof(struct sb_header_t))
         bugp("Bad header size");
     if(sb_header->sec_hdr_size * BLOCK_SIZE != sizeof(struct sb_section_header_t))
@@ -482,6 +486,7 @@ static void extract(unsigned long filesize)
     /* encryption cbc-mac */
     key_array_t keys = NULL; /* array of 16-bytes keys */
     byte real_key[16];
+    bool valid_key = false; /* false until a matching key was found */
     if(sb_header->nr_keys > 0)
     {
         keys = read_keys(sb_header->nr_keys);
@@ -510,8 +515,12 @@ static void extract(unsigned long filesize)
             cbc_mac(g_buf, NULL, sb_header->header_size + sb_header->nr_sections,
                 keys[i], zero, &computed_cbc_mac, 1);
             color(RED);
-            if(memcmp(dict_entry->hdr_cbc_mac, computed_cbc_mac, 16) == 0)
+            bool ok = memcmp(dict_entry->hdr_cbc_mac, computed_cbc_mac, 16) == 0;
+            if(ok)
+            {
+                valid_key = true;
                 printf(" Ok\n");
+            }
             else
                 printf(" Failed\n");
             color(GREEN);
@@ -529,21 +538,35 @@ static void extract(unsigned long filesize)
             color(YELLOW);
             print_hex(decrypted_key, 16, false);
             /* cross-check or copy */
-            if(i == 0)
+            if(valid_key && ok)
                 memcpy(real_key, decrypted_key, 16);
-            else if(memcmp(real_key, decrypted_key, 16) == 0)
+            else if(valid_key)
             {
-                color(RED);
-                printf(" Cross-Check Ok");
-            }
-            else
-            {
-                color(RED);
-                printf(" Cross-Check Failed");
+                if(memcmp(real_key, decrypted_key, 16) == 0)
+                {
+                    color(RED);
+                    printf(" Cross-Check Ok");
+                }
+                else
+                {
+                    color(RED);
+                    printf(" Cross-Check Failed");
+                }
             }
             printf("\n");
         }
     }
+
+    color(RED);
+    printf("  Summary:\n");
+    color(GREEN);
+    printf("    Real key: ");
+    color(YELLOW);
+    print_hex(real_key, 16, true);
+    color(GREEN);
+    printf("    IV      : ");
+    color(YELLOW);
+    print_hex(g_buf, 16, true);
 
     /* sections */
     if(strcasecmp(s_getenv("SB_RAW_CMD"), "YES") != 0)
@@ -605,11 +628,12 @@ static void extract(unsigned long filesize)
         printf("Commands\n");
         uint32_t offset = sb_header->first_boot_tag_off * BLOCK_SIZE;
         byte iv[16];
-        memcpy(iv, g_buf, 16);
         const char *indent = "    ";
         while(true)
         {
-            byte cmd[16];
+            /* restart with IV */
+            memcpy(iv, g_buf, 16);
+            byte cmd[BLOCK_SIZE];
             if(sb_header->nr_keys > 0)
                 cbc_mac(g_buf + offset, cmd, 1, real_key, iv, &iv, 0);
             else
@@ -620,7 +644,7 @@ static void extract(unsigned long filesize)
             if(checksum != hdr->checksum)
             {
                 color(GREY);
-                printf("[Bad checksum]");
+                printf("[Bad checksum']");
             }
             
             if(hdr->opcode == SB_INST_NOP)
@@ -700,8 +724,6 @@ static void extract(unsigned long filesize)
                 if(tag->hdr.flags & SB_INST_LAST_TAG)
                     break;
                 offset += size;
-                /* restart with IV */
-                memcpy(iv, g_buf, 16);
             }
             else
             {

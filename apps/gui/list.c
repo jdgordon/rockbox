@@ -78,22 +78,34 @@ void list_init(void)
     add_event(GUI_EVENT_THEME_CHANGED, false, list_force_reinit);
 }
 
+#ifdef HAVE_TOUCHSCREEN
+static int line_height_from_lcd_dpi(const struct viewport *vp)
+{
+    /* the 4/12 factor is designed for reasonable item size on a 160dpi screen */
+    return MAX(lcd_get_dpi()*4/12, (int)font_get(vp->font)->height);
+}
+#endif
+
+static int list_line_height(const struct viewport *vp)
+{
+#ifdef HAVE_TOUCHSCREEN
+    if (global_settings.list_line_padding == -1)
+        return line_height_from_lcd_dpi(vp);
+    return font_get(vp->font)->height + global_settings.list_line_padding;
+#else
+    return font_get(vp->font)->height;
+#endif
+}
+
 static void list_init_viewports(struct gui_synclist *list)
 {
-    int parent_used;
+    bool parent_used = (*list->parent == &parent[SCREEN_MAIN]);
 
-    parent_used = (*list->parent != &parent[SCREEN_MAIN]);
-
-    if (!parent_used)
+    if (parent_used)
     {
         FOR_NB_SCREENS(i)
         {
-            list->parent[i] = &parent[i];
-            viewport_set_defaults(&parent[i], i);
-#ifdef HAVE_BUTTONBAR
-            if (screens[i].has_buttonbar)
-                list->parent[i]->height -= BUTTONBAR_HEIGHT;
-#endif
+            gui_synclist_set_viewport_defaults(list->parent[i], i);
         }
     }
     list->dirty_tick = current_tick;
@@ -124,13 +136,15 @@ bool list_display_title(struct gui_synclist *list, enum screen_type screen)
 
 static int list_get_nb_lines(struct gui_synclist *list, enum screen_type screen)
 {
-    struct viewport vp = *list->parent[screen];
-    int skin_count = skinlist_get_line_count(screen, list);
-    if (skin_count >= 0)
-        return skin_count;
-    if (list_display_title(list, screen))
-        vp.height -= font_get(list->parent[screen]->font)->height;
-    return viewport_get_nb_lines(&vp);
+    struct viewport *vp = list->parent[screen];
+    int lines = skinlist_get_line_count(screen, list);
+    if (lines < 0)
+    {
+        lines = viewport_get_nb_lines(vp);
+        if (list_display_title(list, screen))
+            lines -= 1;
+    }
+    return lines;
 }
 #else
 #define list_display_title(l, i) false
@@ -482,6 +496,19 @@ void gui_synclist_set_voice_callback(struct gui_synclist * lists,
                                      list_speak_item voice_callback)
 {
     lists->callback_speak_item = voice_callback;
+}
+
+void gui_synclist_set_viewport_defaults(struct viewport *vp,
+                                        enum screen_type screen)
+{
+    viewport_set_defaults(vp, screen);
+#ifdef HAVE_LCD_BITMAP
+    vp->line_height = list_line_height(vp);
+#endif
+#ifdef HAVE_BUTTONBAR
+    if (screens[screen].has_buttonbar)
+        vp->height -= BUTTONBAR_HEIGHT;
+#endif
 }
 
 #ifdef HAVE_LCD_COLOR

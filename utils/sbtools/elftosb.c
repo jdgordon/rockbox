@@ -203,6 +203,7 @@ struct sb_section_t
     uint32_t identifier;
     bool is_data;
     bool is_cleartext;
+    uint32_t alignment;
     // data sections are handled as a single SB_INST_DATA virtual instruction 
     int nr_insts;
     struct sb_inst_t *insts;
@@ -333,6 +334,7 @@ static struct sb_file_t *apply_cmd_file(struct cmd_file_t *cmd_file)
         /* options */
         do
         {
+            /* cleartext */
             struct cmd_option_t *opt = db_find_option_by_id(csec->opt_list, "cleartext");
             if(opt != NULL)
             {
@@ -342,6 +344,23 @@ static struct sb_file_t *apply_cmd_file(struct cmd_file_t *cmd_file)
                     bug("Cleartext section attribute must be 0 or 1\n");
                 sec->is_cleartext = opt->val;
             }
+            /* alignment */
+            opt = db_find_option_by_id(csec->opt_list, "alignment");
+            if(opt != NULL)
+            {
+                if(opt->is_string)
+                    bug("Cleartext section attribute must be an integer\n");
+                // n is a power of 2 iff n & (n - 1) = 0
+                // alignement cannot be lower than block size
+                if((opt->val & (opt->val - 1)) != 0)
+                    bug("Cleartext section attribute must be a power of two\n");
+                if(opt->val < BLOCK_SIZE)
+                    sec->alignment = BLOCK_SIZE;
+                else
+                    sec->alignment = opt->val;
+            }
+            else
+                sec->alignment = BLOCK_SIZE;
         }while(0);
 
         if(csec->is_data)
@@ -469,6 +488,16 @@ static struct sb_file_t *apply_cmd_file(struct cmd_file_t *cmd_file)
  * SB file production
  */
 
+/* helper function to augment an array, free old array */
+void *augment_array(void *arr, size_t elem_sz, size_t cnt, void *aug, size_t aug_cnt)
+{
+    void *p = xmalloc(elem_sz * (cnt + aug_cnt));
+    memcpy(p, arr, elem_sz * cnt);
+    memcpy(p + elem_sz * cnt, aug, elem_sz * aug_cnt);
+    free(arr);
+    return p;
+}
+
 static void fill_gaps(struct sb_file_t *sb)
 {
     for(int i = 0; i < sb->nr_sections; i++)
@@ -501,6 +530,11 @@ static void compute_sb_offsets(struct sb_file_t *sb)
     {
         /* each section has a preliminary TAG command */
         sb->image_size += sizeof(struct sb_instruction_tag_t) / BLOCK_SIZE;
+        /* we might need to pad the section so compute next alignment */
+        uint32_t alignment = BLOCK_SIZE;
+        if((i + 1) < sb->nr_sections)
+            alignment = sb->sections[i + 1].alignment;
+        alignment /= BLOCK_SIZE; /* alignment in block sizes */
         
         struct sb_section_t *sec = &sb->sections[i];
 
@@ -560,6 +594,50 @@ static void compute_sb_offsets(struct sb_file_t *sb)
             }
             else
                 bug("die on inst %d\n", inst->inst);
+        }
+        /* we need to make sure next section starts on the right alignment.
+         * Since each section starts with a boot tag, we thus need to ensure
+         * that this sections ends at adress X such that X+BLOCK_SIZE is
+         * a multiple of the alignment.
+         * For data sections, we just add random data, otherwise we add nops */
+        uint32_t missing_sz = alignment - ((sb->image_size + 1) % alignment);
+        if(missing_sz != alignment)
+        {
+            struct sb_inst_t *aug_insts;
+            int nr_aug_insts = 0;
+
+            if(sb->sections[i].is_data)
+            {
+                nr_aug_insts = 1;
+                aug_insts = malloc(sizeof(struct sb_inst_t));
+                memset(aug_insts, 0, sizeof(struct sb_inst_t));
+                aug_insts[0].inst = SB_INST_DATA;
+                aug_insts[0].size = missing_sz * BLOCK_SIZE;
+                aug_insts[0].data = xmalloc(missing_sz * BLOCK_SIZE);
+                generate_random_data(aug_insts[0].data, missing_sz * BLOCK_SIZE);
+                if(g_debug)
+                    printf("  DATA | size=0x%08x\n", aug_insts[0].size);
+            }
+            else
+            {
+                nr_aug_insts = missing_sz;
+                aug_insts = malloc(sizeof(struct sb_inst_t) * nr_aug_insts);
+                memset(aug_insts, 0, sizeof(struct sb_inst_t) * nr_aug_insts);
+                for(int j = 0; j < nr_aug_insts; j++)
+                {
+                    aug_insts[j].inst = SB_INST_NOP;
+                    if(g_debug)
+                        printf("  NOOP\n");
+                }
+            }
+
+            sb->sections[i].insts = augment_array(sb->sections[i].insts, sizeof(struct sb_inst_t),
+                sb->sections[i].nr_insts, aug_insts, nr_aug_insts);
+            sb->sections[i].nr_insts += nr_aug_insts;
+
+            /* augment image and section size */
+            sb->image_size += missing_sz;
+            sec->sec_size += missing_sz;
         }
     }
     /* final signature */
@@ -679,6 +757,8 @@ void produce_sb_instruction(struct sb_inst_t *inst,
         case SB_INST_MODE:
             cmd->data = inst->addr;
             break;
+        case SB_INST_NOP:
+            break;
         default:
             bug("die\n");
     }
@@ -693,6 +773,7 @@ static void produce_sb_file(struct sb_file_t *sb, const char *filename)
         bugp("cannot open output file");
 
     byte real_key[16];
+    byte crypto_iv[16];
     byte (*cbc_macs)[16] = xmalloc(16 * g_nr_keys);
     /* init CBC-MACs */
     for(int i = 0; i < g_nr_keys; i++)
@@ -711,6 +792,9 @@ static void produce_sb_file(struct sb_file_t *sb, const char *filename)
     produce_sb_header(sb, &sb_hdr);
     sha_1_update(&file_sha1, (byte *)&sb_hdr, sizeof(sb_hdr));
     write(fd, &sb_hdr, sizeof(sb_hdr));
+    
+    memcpy(crypto_iv, &sb_hdr, 16);
+
     /* update CBC-MACs */
     for(int i = 0; i < g_nr_keys; i++)
         cbc_mac((byte *)&sb_hdr, NULL, sizeof(sb_hdr) / BLOCK_SIZE, g_key_array[i],
@@ -734,10 +818,52 @@ static void produce_sb_file(struct sb_file_t *sb, const char *filename)
         struct sb_key_dictionary_entry_t entry;
         memcpy(entry.hdr_cbc_mac, cbc_macs[i], 16);
         cbc_mac(real_key, entry.key, sizeof(real_key) / BLOCK_SIZE, g_key_array[i],
-            (byte *)&sb_hdr, NULL, 1);
+            crypto_iv, NULL, 1);
         
         write(fd, &entry, sizeof(entry));
         sha_1_update(&file_sha1, (byte *)&entry, sizeof(entry));
+    }
+
+    /* HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK HACK */
+    /* Image crafting, don't use it unless you understand what you do */
+    if(strlen(s_getenv("SB_OVERRIDE_REAL_KEY")) != 0)
+    {
+        const char *key = s_getenv("SB_OVERRIDE_REAL_KEY");
+        if(strlen(key) != 32)
+            bugp("Cannot override real key: invalid key length\n");
+        for(int i = 0; i < 16; i++)
+        {
+            byte a, b;
+            if(convxdigit(key[2 * i], &a) || convxdigit(key[2 * i + 1], &b))
+            bugp("Cannot override real key: key should be a 128-bit key written in hexadecimal\n");
+            real_key[i] = (a << 4) | b;
+        }
+    }
+    if(strlen(s_getenv("SB_OVERRIDE_IV")) != 0)
+    {
+        const char *iv = s_getenv("SB_OVERRIDE_IV");
+        if(strlen(iv) != 32)
+            bugp("Cannot override iv: invalid key length\n");
+        for(int i = 0; i < 16; i++)
+        {
+            byte a, b;
+            if(convxdigit(iv[2 * i], &a) || convxdigit(iv[2 * i + 1], &b))
+            bugp("Cannot override iv: key should be a 128-bit key written in hexadecimal\n");
+            crypto_iv[i] = (a << 4) | b;
+        }
+        
+    }
+    /* KCAH KCAH KCAH KCAH KCAH KCAH KCAH KCAH KCAH KCAH KCAH KCAH KCAH KCAH */
+    if(g_debug)
+    {
+        printf("Real key: ");
+        for(int j = 0; j < 16; j++)
+            printf("%02x", real_key[j]);
+        printf("\n");
+        printf("IV      : ");
+        for(int j = 0; j < 16; j++)
+            printf("%02x", crypto_iv[j]);
+        printf("\n");
     }
     /* produce sections data */
     for(int i = 0; i< sb_hdr.nr_sections; i++)
@@ -747,12 +873,12 @@ static void produce_sb_file(struct sb_file_t *sb, const char *filename)
         produce_section_tag_cmd(&sb->sections[i], &tag_cmd, (i + 1) == sb_hdr.nr_sections);
         if(g_nr_keys > 0)
             cbc_mac((byte *)&tag_cmd, (byte *)&tag_cmd, sizeof(tag_cmd) / BLOCK_SIZE,
-                real_key, (byte *)&sb_hdr, NULL, 1);
+                real_key, crypto_iv, NULL, 1);
         sha_1_update(&file_sha1, (byte *)&tag_cmd, sizeof(tag_cmd));
         write(fd, &tag_cmd, sizeof(tag_cmd));
         /* produce other commands */
         byte cur_cbc_mac[16];
-        memcpy(cur_cbc_mac, (byte *)&sb_hdr, 16);
+        memcpy(cur_cbc_mac, crypto_iv, 16);
         for(int j = 0; j < sb->sections[i].nr_insts; j++)
         {
             struct sb_inst_t *inst = &sb->sections[i].insts[j];
@@ -789,7 +915,7 @@ static void produce_sb_file(struct sb_file_t *sb, const char *filename)
     sha_1_output(&file_sha1, final_sig);
     generate_random_data(final_sig + 20, 12);
     if(g_nr_keys > 0)
-        cbc_mac(final_sig, final_sig, 2, real_key, (byte *)&sb_hdr, NULL, 1);
+        cbc_mac(final_sig, final_sig, 2, real_key, crypto_iv, NULL, 1);
     write(fd, final_sig, 32);
     
     close(fd);
@@ -799,11 +925,11 @@ void usage(void)
 {
     printf("Usage: elftosb [options | file]...\n");
     printf("Options:\n");
-    printf("  -?/--help:\t\tDisplay this message\n");
+    printf("  -?/--help\tDisplay this message\n");
     printf("  -o <file>\tSet output file\n");
     printf("  -c <file>\tSet command file\n");
     printf("  -d/--debug\tEnable debug output\n");
-    printf("  -k <file>\t\tAdd key file\n");
+    printf("  -k <file>\tAdd key file\n");
     printf("  -z\t\tAdd zero key\n");
     exit(1);
 }

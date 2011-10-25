@@ -12831,6 +12831,79 @@
   </voice>
 </phrase>
 <phrase>
+  id: LANG_LIST_LINE_PADDING
+  desc: list padding, in display settings
+  user: core
+  <source>
+    *: none
+    touchscreen: "Line Padding in Lists"
+  </source>
+  <dest>
+    *: none
+    touchscreen: "Line Padding in Lists"
+  </dest>
+  <voice>
+    *: none
+    touchscreen: "Line Padding in Lists"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_AUTOMATIC
+  desc: generic automatic
+  user: core
+  <source>
+    *: "Automatic"
+  </source>
+  <dest>
+    *: "Automatic"
+  </dest>
+  <voice>
+    *: "Automatic"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_SLEEP_TIMER_DURATION
+  desc: default sleep timer duration in minutes (unused in UI)
+  user: core
+  <source>
+    *: "Default Sleep Timer Duration"
+  </source>
+  <dest>
+    *: "Default Sleep Timer Duration"
+  </dest>
+  <voice>
+    *: "Default Sleep Timer Duration"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_SLEEP_TIMER_ON_POWER_UP
+  desc: whether sleep timer starts on power up
+  user: core
+  <source>
+    *: "Start Sleep Timer On Boot"
+  </source>
+  <dest>
+    *: "Start Sleep Timer On Boot"
+  </dest>
+  <voice>
+    *: "Start Sleep Timer On Boot"
+  </voice>
+</phrase>
+<phrase>
+  id: LANG_SLEEP_TIMER_CANCEL_CURRENT
+  desc: shown instead of sleep timer when it's running
+  user: core
+  <source>
+    *: "Cancel Sleep Timer"
+  </source>
+  <dest>
+    *: "Cancel Sleep Timer"
+  </dest>
+  <voice>
+    *: "Cancel Sleep Timer"
+  </voice>
+</phrase>
+<phrase>
   id: LANG_SHORTCUTS
   desc: Title in the shortcuts menu
   user: core
@@ -12844,4 +12917,3 @@
     *: "Shortcuts"
   </voice>
 </phrase>
-

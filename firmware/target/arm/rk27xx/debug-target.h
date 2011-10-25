@@ -24,7 +24,11 @@
 
 #include <stdbool.h>
 
+#ifdef RK27_GENERIC
 #define DEBUG_CANCEL BUTTON_VOL
+#elif defined(HM60X)
+#define DEBUG_CANCEL BUTTON_LEFT
+#endif
 
 bool dbg_hw_info(void);
 bool dbg_ports(void);

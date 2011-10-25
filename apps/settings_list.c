@@ -286,6 +286,32 @@ static const char graphic_numeric[] = "graphic,numeric";
 
 #endif /* HAVE_RECORDING */
 
+#ifdef HAVE_TOUCHSCREEN
+
+static const char* list_pad_formatter(char *buffer, size_t buffer_size,
+                                    int val, const char *unit)
+{
+    switch (val)
+    {
+        case -1: return str(LANG_AUTOMATIC);
+        case  0: return str(LANG_OFF);
+        default: break;
+    }
+    snprintf(buffer, buffer_size, "%d %s", val, unit);
+    return buffer;
+}
+
+static int32_t list_pad_getlang(int value, int unit)
+{
+    switch (value)
+    {
+        case -1: return LANG_AUTOMATIC;
+        case  0: return LANG_OFF;
+        default: return TALK_ID(value, unit);
+    }
+}
+
+#endif /* HAVE_TOUCHSCREEN */
 static const char* formatter_unit_0_is_off(char *buffer, size_t buffer_size,
                                     int val, const char *unit)
 {
@@ -523,6 +549,13 @@ static void tsc_set_default(void* setting, void* defaultval)
     memcpy(setting, defaultval, sizeof(struct touchscreen_parameter));
 }
 #endif
+static const char* sleeptimer_formatter(char* buffer, size_t buffer_size,
+                                         int value, const char* unit)
+{
+    (void) unit;
+    snprintf(buffer, buffer_size, "%d:%02d", value / 60, value % 60);
+    return buffer;
+}
 #ifdef HAVE_HOTKEY
 static const char* hotkey_formatter(char* buffer, size_t buffer_size, int value,
                               const char* unit)
@@ -740,6 +773,12 @@ const struct settings_list settings[] = {
     INT_SETTING(F_THEMESETTING, scrollbar_width, LANG_SCROLLBAR_WIDTH, 6,
                 "scrollbar width",UNIT_INT, 3, MAX(LCD_WIDTH/10,25), 1,
                 NULL, NULL, NULL),
+#ifdef HAVE_TOUCHSCREEN
+    TABLE_SETTING(F_ALLOW_ARBITRARY_VALS, list_line_padding, LANG_LIST_LINE_PADDING,
+                  -1, "list padding", "off,auto", UNIT_PIXEL, list_pad_formatter,
+                  list_pad_getlang, NULL, 16,
+                  -1,0,2,4,6,8,10,12,16,20,24,28,32,38,44,50),
+#endif
 #if CONFIG_KEYPAD == RECORDER_PAD
     OFFON_SETTING(F_THEMESETTING,buttonbar, LANG_BUTTON_BAR ,true,"buttonbar", NULL),
 #endif
@@ -1727,6 +1766,11 @@ const struct settings_list settings[] = {
 #endif /* CONFIG_CODEC == SWCODEC */
     TEXT_SETTING(0, playlist_catalog_dir, "playlist catalog directory",
                      PLAYLIST_CATALOG_DEFAULT_DIR, NULL, NULL),
+    INT_SETTING(0, sleeptimer_duration, LANG_SLEEP_TIMER_DURATION, 30,
+                "sleeptimer duration",
+                UNIT_MIN, 5, 300, 5, sleeptimer_formatter, NULL, NULL),
+    OFFON_SETTING(0, sleeptimer_on_startup, LANG_SLEEP_TIMER_ON_POWER_UP, false,
+                  "sleeptimer on startup", NULL),
 #ifdef HAVE_TOUCHPAD_SENSITIVITY_SETTING
     CHOICE_SETTING(0, touchpad_sensitivity, LANG_TOUCHPAD_SENSITIVITY, 0,
                    "touchpad sensitivity", "normal,high", touchpad_set_sensitivity, 2,
