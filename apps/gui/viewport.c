@@ -317,7 +317,7 @@ void viewport_set_fullscreen(struct viewport *vp,
 #ifndef __PCTOOL__
     set_default_align_flags(vp);
 #endif
-    vp->font = global_status.font_id[screen];
+    vp->font = screens[screen].getuifont();
     vp->line_height = font_get(vp->font)->height;
     vp->drawmode = DRMODE_SOLID;
 #if LCD_DEPTH > 1

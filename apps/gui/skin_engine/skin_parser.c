@@ -1645,7 +1645,7 @@ static bool skin_load_fonts(struct wps_data *data)
         font_id = skin_vp->parsed_fontid;
         if (font_id == 1)
         {   /* the usual case -> built-in fonts */
-            vp->font = global_status.font_id[curr_screen];
+            vp->font = screens[curr_screen].getuifont();
             continue;
         }
         else if (font_id <= 0)
