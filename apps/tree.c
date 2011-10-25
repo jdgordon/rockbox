@@ -1000,10 +1000,7 @@ int rockbox_browse(struct browse_context *browse)
         tc.browse = browse;
         strcpy(current, browse->root);
         set_current_file(current);
-        if (browse->flags&BROWSE_RUNFILE)
-            ret_val = ft_enter(&tc);
-        else
-            ret_val = dirbrowse();
+        ret_val = dirbrowse();
     }
     backup_count--;
     if (backup_count >= 0)

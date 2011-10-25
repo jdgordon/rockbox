@@ -52,7 +52,6 @@
 #include "audio.h"
 #include "viewport.h"
 #include "quickscreen.h"
-#include "shortcuts.h"
 
 #ifdef HAVE_LCD_BITMAP
 #include "icons.h"
@@ -281,10 +280,19 @@ static int talk_menu_item(int selected_item, void *data)
         return 0;
 }
 
-void do_setting_screen(const struct settings_list *setting, const char * title,
-                        struct viewport parent[NB_SCREENS])
+void do_setting_from_menu(const struct menu_item_ex *temp,
+                          struct viewport parent[NB_SCREENS])
 {
+    int setting_id;
+    const struct settings_list *setting =
+            find_setting(temp->variable, &setting_id);
+    char *title;
     char padded_title[MAX_PATH];
+    if ((temp->flags&MENU_TYPE_MASK) == MT_SETTING_W_TEXT)
+        title = temp->callback_and_desc->desc;
+    else
+        title = ID2P(setting->lang_id);
+
     /* Pad the title string by repeating it. This is needed
        so the scroll settings title can actually be used to
        test the setting */
@@ -309,22 +317,7 @@ void do_setting_screen(const struct settings_list *setting, const char * title,
     }
 
     option_screen((struct settings_list *)setting, parent,
-                  setting->flags&F_TEMPVAR, (char*)title);
-}
-    
-
-void do_setting_from_menu(const struct menu_item_ex *temp,
-                          struct viewport parent[NB_SCREENS])
-{
-    char *title;
-    int setting_id;
-    const struct settings_list *setting =
-        find_setting(temp->variable, &setting_id);
-    if (temp && ((temp->flags&MENU_TYPE_MASK) == MT_SETTING_W_TEXT))
-        title = temp->callback_and_desc->desc;
-    else
-        title = ID2P(setting->lang_id);
-    do_setting_screen(setting, title, parent);
+                  setting->flags&F_TEMPVAR, title);
 }
 
 /* display a menu */
@@ -458,8 +451,7 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
                                         ID2P(LANG_TOP_QS_ITEM),
                                         ID2P(LANG_LEFT_QS_ITEM),
                                         ID2P(LANG_BOTTOM_QS_ITEM),
-                                        ID2P(LANG_RIGHT_QS_ITEM),
-                                        ID2P(LANG_ADD_TO_FAVES));
+                                        ID2P(LANG_RIGHT_QS_ITEM));
 #endif
                     MENUITEM_STRINGLIST(notquickscreen_able_option, 
                                         ID2P(LANG_ONPLAY_MENU_TITLE), NULL,
@@ -493,10 +485,6 @@ int do_menu(const struct menu_item_ex *start_menu, int *start_selected,
                             break;
                         case 4: /* set as right QS item */
                             set_as_qs_item(setting, QUICKSCREEN_RIGHT);
-                            break;
-                        case 5: /* Add to faves. Same limitation on which can be
-                                  added to the shortcuts menu as the quickscreen */
-                            shortcuts_add(SHORTCUT_SETTING, (void*)setting);
                             break;
 #endif
                     } /* swicth(do_menu()) */
