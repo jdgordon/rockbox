@@ -249,7 +249,7 @@ static int parse_statusbar_tags(struct skin_element* element,
         /* viewport_set_defaults() sets the font to FONT_UI+curr_screen.
          * This parser requires font 1 to always be the UI font, 
          * so force it back to FONT_UI and handle the screen number at the end */
-        default_vp->vp.font = FONT_UI;
+        default_vp->vp.font = 1;
 #endif
     }
     return 0;
