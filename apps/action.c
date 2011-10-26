@@ -192,7 +192,9 @@ static int get_action_worker(int context, int timeout,
     }
     else if (!boosted)
     {
-        if ((button&(BUTTON_SCROLL_BACK|BUTTON_SCROLL_FWD)) && context == CONTEXT_STD)
+        if ((button&(BUTTON_SCROLL_BACK|BUTTON_SCROLL_FWD)) && 
+            (context == CONTEXT_STD || context == CONTEXT_LIST ||
+             context == CONTEXT_MAINMENU || context == CONTEXT_TREE))
         {
             boosted = true;
             cpu_boost(true);
