@@ -26,11 +26,14 @@
  
 enum shortcut_type {
     SHORTCUT_UNDEFINED = -1,
-    SHORTCUT_SETTING,
+    SHORTCUT_SETTING = 0,
     SHORTCUT_FILE,
     SHORTCUT_DEBUGITEM,
     SHORTCUT_BROWSER,
-    SHORTCUT_PLAYLISTMENU
+    SHORTCUT_PLAYLISTMENU,
+    SHORTCUT_SEPERATOR,
+
+    SHORTCUT_TYPE_COUNT
 };
 
 void shortcuts_add(enum shortcut_type type, char* value);
