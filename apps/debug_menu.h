@@ -22,6 +22,7 @@
 #define _DEBUG_MENU_H
 
 bool debug_menu(void);
+bool run_debug_screen(char* screen);
 
 #ifndef SIMULATOR
 extern bool dbg_ports(void);
