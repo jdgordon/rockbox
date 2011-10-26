@@ -383,10 +383,13 @@ static int treeplaylist_callback(int action,
     return action;
 }
 
-void onplay_show_playlist_menu(char* track_name)
+void onplay_show_playlist_menu(char* path)
 {
-    selected_file = track_name;
-    selected_file_attr = FILE_ATTR_AUDIO;
+    selected_file = path;
+    if (dir_exists(path))
+        selected_file_attr = ATTR_DIRECTORY;
+    else
+        selected_file_attr = filetype_get_attr(path);
     do_menu(&tree_playlist_menu, NULL, NULL, false);
 }
 

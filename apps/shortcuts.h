@@ -29,7 +29,8 @@ enum shortcut_type {
     SHORTCUT_SETTING,
     SHORTCUT_FILE,
     SHORTCUT_DEBUGITEM,
-    SHORTCUT_BROWSER
+    SHORTCUT_BROWSER,
+    SHORTCUT_PLAYLISTMENU
 };
 
 void shortcuts_add(enum shortcut_type type, char* value);
