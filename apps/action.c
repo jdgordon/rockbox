@@ -172,6 +172,7 @@ static int get_action_worker(int context, int timeout,
     int i=0;
     int ret = ACTION_UNKNOWN;
     static int last_context = CONTEXT_STD;
+    static bool boosted = false;
     
     
     send_event(GUI_EVENT_ACTIONUPDATE, NULL);
@@ -182,6 +183,22 @@ static int get_action_worker(int context, int timeout,
         button = button_get(true);
     else
         button = button_get_w_tmo(timeout);
+
+#ifdef HAVE_GUI_BOOST_ON_WHEEL
+    if (boosted && (button&BUTTON_REL) && context == CONTEXT_STD)
+    {
+        boosted  = false;
+        cpu_boost(false);
+    }
+    else if (!boosted)
+    {
+        if (button&(BUTTON_SCROLL_BACK|BUTTON_SCROLL_FWD))
+        {
+            boosted = true;
+            cpu_boost(true);
+        }
+    }
+#endif
 
     /* Data from sys events can be pulled with button_get_data
      * multimedia button presses don't go through the action system */
