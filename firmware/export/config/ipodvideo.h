@@ -64,6 +64,7 @@
 #define HAVE_TRANSFLECTIVE_LCD
 
 #define CONFIG_KEYPAD IPOD_4G_PAD
+#define HAVE_GUI_BOOST_ON_WHEEL
 
 /* Define this to enable morse code input */
 #define HAVE_MORSE_INPUT
