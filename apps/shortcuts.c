@@ -183,7 +183,8 @@ void shortcuts_add(enum shortcut_type type, char* value)
         sc->u.setting = (void*)value;
     else
         strlcpy(sc->u.path, value, MAX_PATH);
-    first_idx_to_writeback = shortcut_count - 1;
+    if (first_idx_to_writeback < 0)
+        first_idx_to_writeback = shortcut_count - 1;
     register_storage_idle_func(shortcuts_ata_idle_callback);
 }
         
