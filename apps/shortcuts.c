@@ -26,6 +26,7 @@
 #include "system.h"
 #include "action.h"
 #include "ata_idle_notify.h"
+#include "debug_menu.h"
 #include "core_alloc.h"
 #include "list.h"
 #include "settings.h"
@@ -110,6 +111,7 @@ bool verify_shortcut(struct shortcut* sc)
                 strlcpy(sc->name, sc->u.path, MAX_SHORTCUT_NAME);
             break;
         case SHORTCUT_SETTING:
+        case SHORTCUT_DEBUGITEM:
             break;
     }
     return true;
@@ -130,7 +132,7 @@ void shortcuts_ata_idle_callback(void* data)
     char buf[MAX_PATH];
     if (first_idx_to_writeback < 0)
         return;
-    fd = open(SHORTCUTS_FILENAME, O_APPEND|O_RDWR);
+    fd = open(SHORTCUTS_FILENAME, O_APPEND|O_RDWR|O_CREAT, 0644);
     if (fd < 0)
         return;
     while (first_idx_to_writeback < shortcut_count)
@@ -151,7 +153,11 @@ void shortcuts_ata_idle_callback(void* data)
             case SHORTCUT_FILE:
                 type = "file";
                 break;
+            case SHORTCUT_DEBUGITEM:
+                type = "debug";
+                break;
             case SHORTCUT_UNDEFINED:
+            default:
                 type = "";
                 break;
         }
@@ -210,6 +216,8 @@ int readline_cb(int n, char *buf, void *parameters)
                 sc->type = SHORTCUT_FILE;
             else if (!strcmp(value, "setting"))
                 sc->type = SHORTCUT_SETTING;
+            else if (!strcmp(value, "debug"))
+                sc->type = SHORTCUT_DEBUGITEM;
         }
         else if (!strcmp(name, "name"))
         {
@@ -224,6 +232,7 @@ int readline_cb(int n, char *buf, void *parameters)
                     break;
                 case SHORTCUT_BROWSER:
                 case SHORTCUT_FILE:
+                case SHORTCUT_DEBUGITEM:
                     strlcpy(sc->u.path, value, MAX_PATH);
                     break;
                 case SHORTCUT_SETTING:
@@ -287,7 +296,7 @@ int shortcut_menu_get_action(int action, struct gui_synclist *lists)
         return ACTION_STD_CANCEL;
     return action;
 }
-int shortcut_menu_get_icon(int selected_item, void * data)
+enum themable_icons shortcut_menu_get_icon(int selected_item, void * data)
 {
     (void)data;
     struct shortcut *sc = get_shortcut(selected_item);
@@ -345,6 +354,9 @@ int do_shortcut_menu(void *ignored)
                 case SHORTCUT_SETTING:
                     do_setting_screen(sc->u.setting,
                             sc->name[0] ? sc->name : P2STR(ID2P(sc->u.setting->lang_id)),NULL);
+                    break;
+                case SHORTCUT_DEBUGITEM:
+                    run_debug_screen(sc->u.path);
                     break;
             }
         }
