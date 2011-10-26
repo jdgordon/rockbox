@@ -172,7 +172,6 @@ static int get_action_worker(int context, int timeout,
     int i=0;
     int ret = ACTION_UNKNOWN;
     static int last_context = CONTEXT_STD;
-    static bool boosted = false;
     
     
     send_event(GUI_EVENT_ACTIONUPDATE, NULL);
@@ -184,7 +183,8 @@ static int get_action_worker(int context, int timeout,
     else
         button = button_get_w_tmo(timeout);
 
-#ifdef HAVE_GUI_BOOST_ON_WHEEL
+#if defined(HAVE_GUI_BOOST_ON_WHEEL) && defined(HAVE_ADJUSTABLE_CPU_FREQ)
+    static bool boosted = false;
     if (boosted && (button&BUTTON_REL) && context == CONTEXT_STD)
     {
         boosted  = false;
