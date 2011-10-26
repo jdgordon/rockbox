@@ -185,14 +185,14 @@ static int get_action_worker(int context, int timeout,
 
 #if defined(HAVE_GUI_BOOST_ON_WHEEL) && defined(HAVE_ADJUSTABLE_CPU_FREQ)
     static bool boosted = false;
-    if (boosted && (button&BUTTON_REL) && context == CONTEXT_STD)
+    if (boosted && (button&BUTTON_REL))
     {
         boosted  = false;
         cpu_boost(false);
     }
     else if (!boosted)
     {
-        if (button&(BUTTON_SCROLL_BACK|BUTTON_SCROLL_FWD))
+        if ((button&(BUTTON_SCROLL_BACK|BUTTON_SCROLL_FWD)) && context == CONTEXT_STD)
         {
             boosted = true;
             cpu_boost(true);
