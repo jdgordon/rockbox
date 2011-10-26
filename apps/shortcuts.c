@@ -45,6 +45,16 @@
 
 #define MAX_SHORTCUT_NAME 32
 #define SHORTCUTS_FILENAME ROCKBOX_DIR "/shortcuts.txt"
+char *type_strings[SHORTCUT_TYPE_COUNT] = {
+    [SHORTCUT_SETTING] = "setting",
+    [SHORTCUT_FILE] = "file",
+    [SHORTCUT_DEBUGITEM] = "debug",
+    [SHORTCUT_BROWSER] = "browser",
+    [SHORTCUT_PLAYLISTMENU] = "playlist menu",
+    [SHORTCUT_SEPERATOR] = "seperator",
+};
+    
+
 struct shortcut {
     enum shortcut_type type;
     char name[MAX_SHORTCUT_NAME];
@@ -128,6 +138,8 @@ bool verify_shortcut(struct shortcut* sc)
             break;
         case SHORTCUT_SETTING:
         case SHORTCUT_DEBUGITEM:
+        case SHORTCUT_SEPERATOR:
+        default:
             break;
     }
     return true;
@@ -159,28 +171,7 @@ void shortcuts_ata_idle_callback(void* data)
         int len;
         if (!sc)
             break;
-        switch (sc->type)
-        {
-            case SHORTCUT_SETTING:
-                type = "setting";
-                break;
-            case SHORTCUT_BROWSER:
-                type = "browse";
-                break;
-            case SHORTCUT_FILE:
-                type = "file";
-                break;
-            case SHORTCUT_DEBUGITEM:
-                type = "debug";
-                break;
-            case SHORTCUT_PLAYLISTMENU:
-                type = "playlist menu";
-                break;
-            case SHORTCUT_UNDEFINED:
-            default:
-                type = "";
-                break;
-        }
+        type = type_strings[sc->type];
         len = snprintf(buf, MAX_PATH, "[shortcut]\ntype: %s\ndata: ", type);
         write(fd, buf, len);
         if (sc->type == SHORTCUT_SETTING)
@@ -239,16 +230,10 @@ int readline_cb(int n, char *buf, void *parameters)
     {
         if (!strcmp(name, "type"))
         {
-            if (!strcmp(value, "browse"))
-                sc->type = SHORTCUT_BROWSER;
-            else if (!strcmp(value, "file"))
-                sc->type = SHORTCUT_FILE;
-            else if (!strcmp(value, "setting"))
-                sc->type = SHORTCUT_SETTING;
-            else if (!strcmp(value, "debug"))
-                sc->type = SHORTCUT_DEBUGITEM;
-            else if (!strcmp(value, "playlist menu"))
-                sc->type = SHORTCUT_PLAYLISTMENU;
+            int t = 0;
+            for (t=0; t<SHORTCUT_TYPE_COUNT && sc->type == SHORTCUT_UNDEFINED; t++)
+                if (!strcmp(value, type_strings[t]))
+                    sc->type = t;
         }
         else if (!strcmp(name, "name"))
         {
@@ -259,6 +244,7 @@ int readline_cb(int n, char *buf, void *parameters)
             switch (sc->type)
             {
                 case SHORTCUT_UNDEFINED:
+                case SHORTCUT_TYPE_COUNT:
                     *param = NULL;
                     break;
                 case SHORTCUT_BROWSER:
@@ -269,6 +255,8 @@ int readline_cb(int n, char *buf, void *parameters)
                     break;
                 case SHORTCUT_SETTING:
                     sc->u.setting = find_setting_by_cfgname(value, NULL);
+                    break;
+                case SHORTCUT_SEPERATOR:
                     break;
             }
         }
@@ -318,6 +306,8 @@ const char * shortcut_menu_get_name(int selected_item, void * data,
         return "";
     if (sc->type == SHORTCUT_SETTING)
         return sc->name[0] ? sc->name : P2STR(ID2P(sc->u.setting->lang_id));
+    else if (sc->type == SHORTCUT_SEPERATOR)
+        return sc->name;
     return sc->name[0] ? sc->name : sc->u.path;
 }
 
@@ -382,8 +372,6 @@ int do_shortcut_menu(void *ignored)
                 continue;
             switch (sc->type)
             {
-                case SHORTCUT_UNDEFINED:
-                    break;
                 case SHORTCUT_PLAYLISTMENU:
                     if (!file_exists(sc->u.path))
                     {
@@ -418,6 +406,9 @@ int do_shortcut_menu(void *ignored)
                     break;
                 case SHORTCUT_DEBUGITEM:
                     run_debug_screen(sc->u.path);
+                    break;
+                case SHORTCUT_UNDEFINED:
+                default:
                     break;
             }
         }
