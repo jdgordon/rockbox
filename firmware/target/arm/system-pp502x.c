@@ -334,15 +334,15 @@ static void pp_set_cpu_frequency(long frequency)
         PLL_CONTROL   = 0x8a020a03; /* repeat setup */
         udelay(500);                /* wait for relock */
 #elif (CONFIG_CPU == PP5022) || (CONFIG_CPU == PP5024)
-        PLL_CONTROL   = 0x8a121403; /*  80 MHz = (20/3 * 24MHz) / 2 */
+        PLL_CONTROL   = 0x8a021906; /* 100 MHz = (25/6 * 24MHz) / 1 */
         while (!(PLL_STATUS & 0x80000000)); /* wait for relock */
 #endif
         scale_suspend_core(true);
-        DEV_TIMING1   = 0x00000808;
+        DEV_TIMING1   = 0x00000a0a;
         CLOCK_SOURCE  = 0x20007777; /* source #1, #2, #3, #4: PLL (#2 active) */
         scale_suspend_core(false);
         break;
-#if 0 /******** CPUFREQ_NORMAL = 24MHz without PLL ********/
+#if 1 /******** CPUFREQ_NORMAL = 24MHz without PLL ********/
       case CPUFREQ_NORMAL:
         cpu_frequency =  CPUFREQ_NORMAL;
         PLL_CONTROL  |=  0x08000000;
