@@ -302,6 +302,22 @@ enum themable_icons shortcut_menu_get_icon(int selected_item, void * data)
     struct shortcut *sc = get_shortcut(selected_item);
     if (!sc)
         return Icon_NOICON;
+    if (sc->icon == Icon_NOICON)
+    {
+        switch (sc->type)
+        {
+            case SHORTCUT_FILE:
+                return filetype_get_icon(filetype_get_attr(sc->u.path));
+            case SHORTCUT_BROWSER:
+                return Icon_Folder;
+            case SHORTCUT_SETTING:
+                return Icon_Menu_setting;
+            case SHORTCUT_DEBUGITEM:
+                return Icon_Menu_functioncall;
+            default:
+                break;
+        }
+    }
     return sc->icon;
 }
 
