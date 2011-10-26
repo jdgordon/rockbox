@@ -62,6 +62,22 @@ struct shortcut_handle {
 static int first_handle = 0;
 static int shortcut_count = 0;
 
+static void reset_shortcuts(void)
+{
+    int current_handle = first_handle;
+    struct shortcut_handle *h = NULL;
+    while (current_handle > 0)
+    {
+        int next;
+        h = core_get_data(current_handle);
+        next = h->next_handle;
+        core_free(current_handle);
+        current_handle = next;
+    }
+    first_handle = 0;
+    shortcut_count = 0;
+}   
+
 static struct shortcut* get_shortcut(int index)
 {
     int handle_count, handle_index;
@@ -109,8 +125,6 @@ bool verify_shortcut(struct shortcut* sc)
         case SHORTCUT_PLAYLISTMENU:
             if (sc->u.path[0] == '\0')
                 return false;
-            if (sc->name[0] == '\0')
-                strlcpy(sc->name, sc->u.path, MAX_SHORTCUT_NAME);
             break;
         case SHORTCUT_SETTING:
         case SHORTCUT_DEBUGITEM:
@@ -132,14 +146,15 @@ void shortcuts_ata_idle_callback(void* data)
     (void)data;
     int fd;
     char buf[MAX_PATH];
+    int current_idx = first_idx_to_writeback;
     if (first_idx_to_writeback < 0)
         return;
     fd = open(SHORTCUTS_FILENAME, O_APPEND|O_RDWR|O_CREAT, 0644);
     if (fd < 0)
         return;
-    while (first_idx_to_writeback < shortcut_count)
+    while (current_idx < shortcut_count)
     {
-        struct shortcut* sc = get_shortcut(first_idx_to_writeback++);
+        struct shortcut* sc = get_shortcut(current_idx++);
         char *type;
         int len;
         if (!sc)
@@ -175,6 +190,14 @@ void shortcuts_ata_idle_callback(void* data)
         write(fd, "\n\n", 2);
     }
     close(fd);
+    if (first_idx_to_writeback == 0)
+    {
+        /* reload all shortcuts because we appended to the shortcuts file which
+         * has not been read yet.
+         */
+         reset_shortcuts();
+         shortcuts_init();
+    }    
     first_idx_to_writeback = -1;
 }
 void shortcuts_add(enum shortcut_type type, char* value)
