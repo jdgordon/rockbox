@@ -39,6 +39,7 @@
 #include "filefuncs.h"
 #include "filetypes.h"
 #include "shortcuts.h"
+#include "onplay.h"
 
 
 
@@ -105,6 +106,7 @@ bool verify_shortcut(struct shortcut* sc)
             return false;
         case SHORTCUT_BROWSER:
         case SHORTCUT_FILE:
+        case SHORTCUT_PLAYLISTMENU:
             if (sc->u.path[0] == '\0')
                 return false;
             if (sc->name[0] == '\0')
@@ -155,6 +157,9 @@ void shortcuts_ata_idle_callback(void* data)
                 break;
             case SHORTCUT_DEBUGITEM:
                 type = "debug";
+                break;
+            case SHORTCUT_PLAYLISTMENU:
+                type = "playlist menu";
                 break;
             case SHORTCUT_UNDEFINED:
             default:
@@ -219,6 +224,8 @@ int readline_cb(int n, char *buf, void *parameters)
                 sc->type = SHORTCUT_SETTING;
             else if (!strcmp(value, "debug"))
                 sc->type = SHORTCUT_DEBUGITEM;
+            else if (!strcmp(value, "playlist menu"))
+                sc->type = SHORTCUT_PLAYLISTMENU;
         }
         else if (!strcmp(name, "name"))
         {
@@ -234,6 +241,7 @@ int readline_cb(int n, char *buf, void *parameters)
                 case SHORTCUT_BROWSER:
                 case SHORTCUT_FILE:
                 case SHORTCUT_DEBUGITEM:
+                case SHORTCUT_PLAYLISTMENU:
                     strlcpy(sc->u.path, value, MAX_PATH);
                     break;
                 case SHORTCUT_SETTING:
@@ -315,6 +323,8 @@ enum themable_icons shortcut_menu_get_icon(int selected_item, void * data)
                 return Icon_Menu_setting;
             case SHORTCUT_DEBUGITEM:
                 return Icon_Menu_functioncall;
+            case SHORTCUT_PLAYLISTMENU:
+                return Icon_Playlist;
             default:
                 break;
         }
@@ -350,6 +360,17 @@ int do_shortcut_menu(void *ignored)
             switch (sc->type)
             {
                 case SHORTCUT_UNDEFINED:
+                    break;
+                case SHORTCUT_PLAYLISTMENU:
+                    if (!file_exists(sc->u.path))
+                    {
+                        splash(HZ, ID2P(LANG_NO_FILES));
+                        break;
+                    }
+                    else
+                    {
+                        onplay_show_playlist_menu(sc->u.path);
+                    }
                     break;
                 case SHORTCUT_FILE:
                     if (!file_exists(sc->u.path))
