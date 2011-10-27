@@ -49,7 +49,7 @@ char *type_strings[SHORTCUT_TYPE_COUNT] = {
     [SHORTCUT_SETTING] = "setting",
     [SHORTCUT_FILE] = "file",
     [SHORTCUT_DEBUGITEM] = "debug",
-    [SHORTCUT_BROWSER] = "browser",
+    [SHORTCUT_BROWSER] = "browse",
     [SHORTCUT_PLAYLISTMENU] = "playlist menu",
     [SHORTCUT_SEPERATOR] = "seperator",
 };
@@ -137,6 +137,7 @@ bool verify_shortcut(struct shortcut* sc)
                 return false;
             break;
         case SHORTCUT_SETTING:
+            return sc->u.setting != NULL;
         case SHORTCUT_DEBUGITEM:
         case SHORTCUT_SEPERATOR:
         default:
