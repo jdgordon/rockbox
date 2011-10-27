@@ -899,7 +899,9 @@ void keyclick_click(int button)
             }
             if (global_settings.keyclick_hardware)
             {
+#if !defined(SIMULATOR)
                 piezo_button_beep(false, false);
+#endif
             }
 #else
             system_sound_play(SOUND_KEYCLICK);
