@@ -32,6 +32,15 @@
 /* define this if you have a colour LCD */
 #define HAVE_LCD_COLOR
 
+/* define this if you want album art for this target */
+#define HAVE_ALBUMART
+
+/* define this to enable bitmap scaling */
+#define HAVE_BMP_SCALING
+
+/* define this to enable JPEG decoding */
+#define HAVE_JPEG
+
 /* define this if you have access to the quickscreen */
 #define HAVE_QUICKSCREEN
 
@@ -45,7 +54,7 @@
 #define LCD_WIDTH  96
 #define LCD_HEIGHT 96
 #define LCD_DEPTH  16   /* 65536 colours */
-#define LCD_PIXELFORMAT RGB565SWAPPED /* rgb565 swapped */
+#define LCD_PIXELFORMAT RGB565SWAPPED
 
 /* define this if you have LCD enable function */
 #define HAVE_LCD_ENABLE
@@ -114,15 +123,17 @@
 /* Define this for LCD backlight available */
 #define HAVE_BACKLIGHT
 
+#define HAVE_BACKLIGHT_BRIGHTNESS
+
 /* define this if you have a flash memory storage */
 #define HAVE_FLASH_STORAGE
 
 /* define this if the flash memory uses the SecureDigital Memory Card protocol */
 #define CONFIG_STORAGE STORAGE_SD
 
-#define BATTERY_CAPACITY_DEFAULT 290    /* default battery capacity */
-#define BATTERY_CAPACITY_MIN 290        /* min. capacity selectable */
-#define BATTERY_CAPACITY_MAX 290        /* max. capacity selectable */
+#define BATTERY_CAPACITY_DEFAULT 300    /* default battery capacity */
+#define BATTERY_CAPACITY_MIN 300        /* min. capacity selectable */
+#define BATTERY_CAPACITY_MAX 300        /* max. capacity selectable */
 #define BATTERY_CAPACITY_INC 0          /* capacity increment */
 #define BATTERY_TYPES_COUNT  1          /* only one type */
 
@@ -189,9 +200,9 @@
 /** Port-specific settings **/
 
 /* Main LCD backlight brightness range and defaults */
-#define MIN_BRIGHTNESS_SETTING      1   /* TODO */
-#define MAX_BRIGHTNESS_SETTING     12   /* TODO */
-#define DEFAULT_BRIGHTNESS_SETTING  6   /* TODO */
+#define MIN_BRIGHTNESS_SETTING      0
+#define MAX_BRIGHTNESS_SETTING      9
+#define DEFAULT_BRIGHTNESS_SETTING  6
 
 /* Default recording levels */
 #define DEFAULT_REC_MIC_GAIN    23
