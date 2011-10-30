@@ -43,8 +43,6 @@ enum skinnable_screens {
 
 #ifdef HAVE_LCD_BITMAP
 
-#define SKIN_BUFFER_SIZE (WPS_MAX_TOKENS * \
-                         (sizeof(struct wps_token) + (sizeof(struct skin_element))))
 #endif
 
 #ifdef HAVE_LCD_CHARCELLS
