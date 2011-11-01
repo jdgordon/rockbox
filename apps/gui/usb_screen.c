@@ -268,7 +268,7 @@ void gui_usb_screen_run(bool early_usb)
             font_unload(global_status.font_id[i]);
             global_status.font_id[i] = -1;
         }
-      //FIXME  skin_unload_all();
+        skin_unload_all();
 #endif
     }
 

@@ -33,8 +33,6 @@
 #define TIMEOUT_UNIT (HZ/10) /* I.e. 0.1 sec */
 #define DEFAULT_SUBLINE_TIME_MULTIPLIER 20 /* In TIMEOUT_UNIT's */
 
-#define SKIN_BUFFER_SIZE (1024*25)
-
 #include "skin_tokens.h"
 #include "tag_table.h"
 #include "skin_parser.h"
