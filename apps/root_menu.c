@@ -636,6 +636,7 @@ void root_menu(void)
     int selected = 0;
     
     push_current_activity(ACTIVITY_MAINMENU);
+    shortcuts_init();
 
     if (global_settings.start_in_screen == 0)
         next_screen = (int)global_status.last_screen;
