@@ -261,105 +261,151 @@ bool cfg_string_to_int(int setting_id, int* out, const char* str)
     return false;
 }
 
+static int settings_loadcfg_callback(int n, char *buf, void *parameters)
+{
+    (void)n;
+    intptr_t *needs_apply = (intptr_t*)parameters;
+    int i;
+    char* name;
+    char* value;
+    if (!settings_parseline(buf, &name, &value))
+        return 0;
+    for(i=0; i<nb_settings; i++)
+    {
+        if (settings[i].cfg_name == NULL)
+            continue;
+        if (!strcasecmp(name,settings[i].cfg_name))
+        {
+            switch (settings[i].flags&F_T_MASK)
+            {
+                case F_T_CUSTOM:
+                    settings[i].custom_setting->load_from_cfg(settings[i].setting, value);
+                    break;
+                case F_T_INT:
+                case F_T_UINT:
+#ifdef HAVE_LCD_COLOR
+                    if (settings[i].flags&F_RGB)
+                        hex_to_rgb(value, (int*)settings[i].setting);
+                    else 
+#endif 
+                        if (settings[i].cfg_vals == NULL)
+                    {
+                        *(int*)settings[i].setting = atoi(value);
+                    }
+                    else
+                    {
+                        int temp, *v = (int*)settings[i].setting;
+                        bool found = cfg_string_to_int(i, &temp, value);
+                        if (found)
+                        {
+                            if (settings[i].flags&F_TABLE_SETTING)
+                                *v = settings[i].table_setting->values[temp];
+                            else
+                                *v = temp;
+                        }
+                        else
+                        {   /* atoi breaks choice settings because they
+                             * don't have int-like values, and would
+                             * fall back to the first value (i.e. 0)
+                             * due to atoi */
+                            if (!(settings[i].flags&F_CHOICE_SETTING))
+                                *v = atoi(value);
+                        }
+                    }
+                    break;
+                case F_T_BOOL:
+                {
+                    int temp;
+                    if (cfg_string_to_int(i,&temp,value))
+                        *(bool*)settings[i].setting = (temp!=0);
+                    if (settings[i].bool_setting->option_callback)
+                        settings[i].bool_setting->option_callback(temp!=0);
+                    break;
+                }
+                case F_T_CHARPTR:
+                case F_T_UCHARPTR:
+                {
+                    char storage[MAX_PATH];
+                    if (settings[i].filename_setting->prefix)
+                    {
+                        const char *dir = settings[i].filename_setting->prefix;
+                        size_t len = strlen(dir);
+                        if (!strncasecmp(value, dir, len))
+                        {
+                            strlcpy(storage, &value[len], MAX_PATH);
+                        }
+                        else strlcpy(storage, value, MAX_PATH);
+                    }
+                    else strlcpy(storage, value, MAX_PATH);
+                    if (settings[i].filename_setting->suffix)
+                    {
+                        char *s = strcasestr(storage,settings[i].filename_setting->suffix);
+                        if (s) *s = '\0';
+                    }
+                    strlcpy((char*)settings[i].setting, storage,
+                            settings[i].filename_setting->max_len);
+                    break;
+                }
+            }
+            if (!needs_apply)
+            {
+                bool has_callback = false;
+#define CALL_CALLBACK(callback, pointer) if (callback) { callback(pointer); has_callback = true; }
+                /* try to apply the setting with the callback */
+                if ((settings[i].flags & F_BOOL_SETTING) == F_BOOL_SETTING)
+                {
+                    CALL_CALLBACK(settings[i].bool_setting->option_callback,
+                                *(bool*)settings[i].setting)
+                }
+                else if ((settings[i].flags & F_T_SOUND) == F_T_SOUND)
+                {
+                    int val = *(int*)settings[i].setting;
+                    int setting_id = settings[i].sound_setting->setting;
+                    has_callback = true;
+                    sound_set(setting_id, val);
+                }
+                else if ((settings[i].flags & F_INT_SETTING) == F_INT_SETTING)
+                {
+                    CALL_CALLBACK(settings[i].int_setting->option_callback,
+                                *(int*)settings[i].setting)
+                }
+                else if ((settings[i].flags & F_CHOICE_SETTING) == F_CHOICE_SETTING)
+                {
+                    CALL_CALLBACK(settings[i].choice_setting->option_callback,
+                                *(int*)settings[i].setting)
+                }
+                else if ((settings[i].flags & F_TABLE_SETTING) == F_TABLE_SETTING)
+                {
+                    CALL_CALLBACK(settings[i].table_setting->option_callback,
+                                *(int*)settings[i].setting)
+                }
+                else if ((settings[i].flags & F_CUSTOM_SETTING) == F_CUSTOM_SETTING)
+                {
+                    /* Custom settings should apply in the load_from_cfg() callback so ignore */
+                    has_callback = true;
+                }
+                if (!has_callback)
+                    *needs_apply = 1;
+            }
+            break;
+        } /* if (!strcmp(name,settings[i].cfg_name)) */
+    } /* for(...) */
+    return 0;
+}
+
 bool settings_load_config(const char* file, bool apply)
 {
     int fd;
     char line[128];
-    char* name;
-    char* value;
-    int i;
+    intptr_t needs_apply = 0;
     fd = open_utf8(file, O_RDONLY);
     if (fd < 0)
         return false;
 
-    while (read_line(fd, line, sizeof line) > 0)
-    {
-        if (!settings_parseline(line, &name, &value))
-            continue;    
-        for(i=0; i<nb_settings; i++)
-        {
-            if (settings[i].cfg_name == NULL)
-                continue;
-            if (!strcasecmp(name,settings[i].cfg_name))
-            {
-                switch (settings[i].flags&F_T_MASK)
-                {
-                    case F_T_CUSTOM:
-                        settings[i].custom_setting->load_from_cfg(settings[i].setting, value);
-                        break;
-                    case F_T_INT:
-                    case F_T_UINT:
-#ifdef HAVE_LCD_COLOR
-                        if (settings[i].flags&F_RGB)
-                            hex_to_rgb(value, (int*)settings[i].setting);
-                        else 
-#endif 
-                            if (settings[i].cfg_vals == NULL)
-                        {
-                            *(int*)settings[i].setting = atoi(value);
-                        }
-                        else
-                        {
-                            int temp, *v = (int*)settings[i].setting;
-                            bool found = cfg_string_to_int(i, &temp, value);
-                            if (found)
-                            {
-                                if (settings[i].flags&F_TABLE_SETTING)
-                                    *v = settings[i].table_setting->values[temp];
-                                else
-                                    *v = temp;
-                            }
-                            else
-                            {   /* atoi breaks choice settings because they
-                                 * don't have int-like values, and would
-                                 * fall back to the first value (i.e. 0)
-                                 * due to atoi */
-                                if (!(settings[i].flags&F_CHOICE_SETTING))
-                                    *v = atoi(value);
-                            }
-                        }
-                        break;
-                    case F_T_BOOL:
-                    {
-                        int temp;
-                        if (cfg_string_to_int(i,&temp,value))
-                            *(bool*)settings[i].setting = (temp!=0);
-                        if (settings[i].bool_setting->option_callback)
-                            settings[i].bool_setting->option_callback(temp!=0);
-                        break;
-                    }
-                    case F_T_CHARPTR:
-                    case F_T_UCHARPTR:
-                    {
-                        char storage[MAX_PATH];
-                        if (settings[i].filename_setting->prefix)
-                        {
-                            const char *dir = settings[i].filename_setting->prefix;
-                            size_t len = strlen(dir);
-                            if (!strncasecmp(value, dir, len))
-                            {
-                                strlcpy(storage, &value[len], MAX_PATH);
-                            }
-                            else strlcpy(storage, value, MAX_PATH);
-                        }
-                        else strlcpy(storage, value, MAX_PATH);
-                        if (settings[i].filename_setting->suffix)
-                        {
-                            char *s = strcasestr(storage,settings[i].filename_setting->suffix);
-                            if (s) *s = '\0';
-                        }
-                        strlcpy((char*)settings[i].setting, storage,
-                                settings[i].filename_setting->max_len);
-                        break;
-                    }
-                }
-                break;
-            } /* if (!strcmp(name,settings[i].cfg_name)) */
-        } /* for(...) */
-    } /* while(...) */
+    fast_readline(fd, line, sizeof line, &needs_apply, settings_loadcfg_callback);
 
     close(fd);
-    if (apply)
+    if (apply && needs_apply)
     {
         settings_save();
         settings_apply(true);
