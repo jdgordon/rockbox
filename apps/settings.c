@@ -268,6 +268,7 @@ bool settings_load_config(const char* file, bool apply)
     char* name;
     char* value;
     int i;
+    bool needs_apply = false;
     fd = open_utf8(file, O_RDONLY);
     if (fd < 0)
         return false;
@@ -353,13 +354,53 @@ bool settings_load_config(const char* file, bool apply)
                         break;
                     }
                 }
+                if (!needs_apply)
+                {
+                    bool has_callback = false;
+#define CALL_CALLBACK(callback, pointer) if (callback) { callback(pointer); has_callback = true; }
+                    /* try to apply the setting with the callback */
+                    if ((settings[i].flags & F_BOOL_SETTING) == F_BOOL_SETTING)
+                    {
+                        CALL_CALLBACK(settings[i].bool_setting->option_callback,
+                                    *(bool*)settings[i].setting)
+                    }
+                    else if ((settings[i].flags & F_T_SOUND) == F_T_SOUND)
+                    {
+                        int val = *(int*)settings[i].setting;
+                        int setting_id = settings[i].sound_setting->setting;
+                        has_callback = true;
+                        sound_set(setting_id, val);
+                    }
+                    else if ((settings[i].flags & F_INT_SETTING) == F_INT_SETTING)
+                    {
+                        CALL_CALLBACK(settings[i].int_setting->option_callback,
+                                    *(int*)settings[i].setting)
+                    }
+                    else if ((settings[i].flags & F_CHOICE_SETTING) == F_CHOICE_SETTING)
+                    {
+                        CALL_CALLBACK(settings[i].choice_setting->option_callback,
+                                    *(int*)settings[i].setting)
+                    }
+                    else if ((settings[i].flags & F_TABLE_SETTING) == F_TABLE_SETTING)
+                    {
+                        CALL_CALLBACK(settings[i].table_setting->option_callback,
+                                    *(int*)settings[i].setting)
+                    }
+                    else if ((settings[i].flags & F_CUSTOM_SETTING) == F_CUSTOM_SETTING)
+                    {
+                        /* Custom settings should apply in the load_from_cfg() callback so ignore */
+                        has_callback = true;
+                    }
+                    if (!has_callback)
+                        needs_apply = true;
+                }
                 break;
             } /* if (!strcmp(name,settings[i].cfg_name)) */
         } /* for(...) */
     } /* while(...) */
 
     close(fd);
-    if (apply)
+    if (apply && needs_apply)
     {
         settings_save();
         settings_apply(true);
