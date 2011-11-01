@@ -98,7 +98,7 @@ static int set_color_func(void* color)
     {
         settings_save();
         settings_apply(false);
-        settings_apply_skins();
+        settings_apply_skins(true);
     }
     return res;
 }
@@ -113,7 +113,7 @@ static int reset_color(void)
     
     settings_save();
     settings_apply(false);
-    settings_apply_skins();
+    settings_apply_skins(true);
     return 0;
 }
 MENUITEM_FUNCTION(set_bg_col, MENU_FUNC_USEPARAM, ID2P(LANG_BACKGROUND_COLOR),
@@ -167,7 +167,7 @@ static int statusbar_callback_ex(int action,const struct menu_item_ex *this_item
             break;
         case ACTION_EXIT_MENUITEM:
             if (old_bar[screen] != statusbar_position(screen))
-                settings_apply_skins();
+                settings_apply_skins(true);
             break;
     }
     return ACTION_REDRAW;

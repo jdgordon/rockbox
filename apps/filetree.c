@@ -527,13 +527,13 @@ int ft_enter(struct tree_context* c)
             case FILE_ATTR_FMS:
                 splash(0, ID2P(LANG_WAIT));
                 set_file(buf, (char *)global_settings.fms_file, MAX_FILENAME);
-                settings_apply_skins();
+                settings_apply_skins(true);
                 break;
 #ifdef HAVE_REMOTE_LCD
             case FILE_ATTR_RFMS:
                 splash(0, ID2P(LANG_WAIT));
                 set_file(buf, (char *)global_settings.rfms_file, MAX_FILENAME);
-                settings_apply_skins();
+                settings_apply_skins(true);
                 break;
 #endif
 #endif
@@ -542,14 +542,14 @@ int ft_enter(struct tree_context* c)
             case FILE_ATTR_SBS:
                 splash(0, ID2P(LANG_WAIT));
                 set_file(buf, (char *)global_settings.sbs_file, MAX_FILENAME);
-                settings_apply_skins();
+                settings_apply_skins(true);
                 break;
 #endif
 #ifdef HAVE_REMOTE_LCD
             case FILE_ATTR_RSBS:
                 splash(0, ID2P(LANG_WAIT));
                 set_file(buf, (char *)global_settings.rsbs_file, MAX_FILENAME);
-                settings_apply_skins();
+                settings_apply_skins(true);
                 break;
 #endif
                 /* wps config file */
@@ -557,7 +557,7 @@ int ft_enter(struct tree_context* c)
                 splash(0, ID2P(LANG_WAIT));
                 set_file(buf, (char *)global_settings.wps_file,
                          MAX_FILENAME);
-                settings_apply_skins();
+                settings_apply_skins(true);
                 break;
 
 #if defined(HAVE_REMOTE_LCD) && (NB_SCREENS > 1)
@@ -566,7 +566,7 @@ int ft_enter(struct tree_context* c)
                 splash(0, ID2P(LANG_WAIT));
                 set_file(buf, (char *)global_settings.rwps_file,
                          MAX_FILENAME);
-                settings_apply_skins();
+                settings_apply_skins(true);
                 break;
 #endif
 
@@ -594,7 +594,7 @@ int ft_enter(struct tree_context* c)
                         MAX_FILENAME);
                 talk_init(); /* use voice of same language */
                 viewportmanager_theme_changed(THEME_LANGUAGE);
-                settings_apply_skins();
+                settings_apply_skins(false);
                 splash(HZ, ID2P(LANG_LANGUAGE_LOADED));
                 break;
 

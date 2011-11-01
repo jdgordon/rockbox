@@ -363,7 +363,7 @@ bool settings_load_config(const char* file, bool apply)
     {
         settings_save();
         settings_apply(true);
-        settings_apply_skins();
+        settings_apply_skins(false);
     }
     return true;
 }

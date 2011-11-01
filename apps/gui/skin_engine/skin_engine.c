@@ -58,6 +58,8 @@ void theme_init_buffer(void)
 void skin_data_free_buflib_allocs(struct wps_data *wps_data);
 char* wps_default_skin(enum screen_type screen);
 char* default_radio_skin(enum screen_type screen);
+static char* get_skin_setting_value(enum skinnable_screens skin,
+        enum screen_type screen);
 
 struct wps_state     wps_state               = { .id3 = NULL };
 static struct gui_skin_helper {
@@ -73,6 +75,7 @@ static struct gui_skin_helper {
 };
     
 static struct gui_skin {
+    char                filename[MAX_PATH];
     struct gui_wps      gui_wps;
     struct wps_data     data;
     char                *buffer_start;
@@ -89,6 +92,7 @@ void gui_sync_skin_init(void)
     {
         FOR_NB_SCREENS(i)
         {
+            skins[j][i].filename[0] = '\0';
             skins[j][i].buffer_start = NULL;
             skins[j][i].needs_full_update = true;
             skins[j][i].gui_wps.data = &skins[j][i].data;
@@ -110,7 +114,10 @@ void skin_unload_all(void)
     for(j=0; j<SKINNABLE_SCREENS_COUNT; j++)
     {
         FOR_NB_SCREENS(i)
+        {
             skin_data_free_buflib_allocs(&skins[j][i].data);
+            skins[j][i].filename[0] = '\0';
+        }
     }
 
     skin_buffer_init(skin_buffer, SKIN_BUFFER_SIZE);
@@ -121,20 +128,34 @@ void skin_unload_all(void)
     gui_sync_skin_init();
 }
 
-void settings_apply_skins(void)
+void settings_apply_skins(bool force)
 {
     int i;
-
-    skin_unload_all();
-    /* Make sure each skin is loaded */
-    for (i=0; i<SKINNABLE_SCREENS_COUNT; i++)
+    bool changed = false;
+    for (i=0; i<SKINNABLE_SCREENS_COUNT && !changed && !force; i++)
     {
         FOR_NB_SCREENS(j)
-            skin_get_gwps(i, j);
+        {
+            if (strcmp(skins[i][j].filename, get_skin_setting_value(i,j)))
+            {
+                changed = true;
+                break;
+            }
+        }
     }
+    if (changed || force)
+    {
+        skin_unload_all();
+        /* Make sure each skin is loaded */
+        for (i=0; i<SKINNABLE_SCREENS_COUNT; i++)
+        {
+            FOR_NB_SCREENS(j)
+                skin_get_gwps(i, j);
+        }
 #if LCD_DEPTH > 1 || defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1
-    skin_backdrops_preload(); /* should maybe check the retval here... */
+        skin_backdrops_preload(); /* should maybe check the retval here... */
 #endif
+    }
     viewportmanager_theme_changed(THEME_STATUSBAR);
 #if LCD_DEPTH > 1 || defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1
     FOR_NB_SCREENS(i)
@@ -163,84 +184,95 @@ void skin_load(enum skinnable_screens skin, enum screen_type screen,
 }
 
 static bool loading_a_sbs = false;
+static char* get_skin_setting_value(enum skinnable_screens skin,
+        enum screen_type screen)
+{
+    (void)screen;
+    static char buf[MAX_PATH];
+    char *setting = NULL, *ext = NULL;
+    switch (skin)
+    {
+        case CUSTOM_STATUSBAR:
+#if defined(HAVE_REMOTE_LCD) && NB_SCREENS > 1
+            if (screen == SCREEN_REMOTE)
+            {
+                setting = global_settings.rsbs_file;
+                ext = "rsbs";
+            }
+            else
+#endif
+            {
+                setting = global_settings.sbs_file;
+                ext = "sbs";
+            }
+            break;
+        case WPS:
+#if defined(HAVE_REMOTE_LCD) && NB_SCREENS > 1
+            if (screen == SCREEN_REMOTE)
+            {
+                setting = global_settings.rwps_file;
+                ext = "rwps";
+            }
+            else
+#endif
+            {
+                setting = global_settings.wps_file;
+                ext = "wps";
+            }
+            break;
+#if CONFIG_TUNER
+        case FM_SCREEN:
+#if defined(HAVE_REMOTE_LCD) && NB_SCREENS > 1
+            if (screen == SCREEN_REMOTE)
+            {
+                setting = global_settings.rfms_file;
+                ext = "rfms";
+            }
+            else
+#endif
+            {
+                setting = global_settings.fms_file;
+                ext = "fms";
+            }
+            break;
+#endif
+        default:
+            return NULL;
+    }
+    buf[0] = '\0'; /* force it to reload the default */
+    if (strcmp(setting, "rockbox_failsafe"))
+    {
+        snprintf(buf, sizeof buf, WPS_DIR "/%s.%s", setting, ext);
+    }
+    return buf;
+}
+
 struct gui_wps *skin_get_gwps(enum skinnable_screens skin, enum screen_type screen)
 {
     if (!loading_a_sbs && skins[skin][screen].data.wps_loaded == false)
     {
-        char buf[MAX_PATH*2];
-        char *setting = NULL, *ext = NULL;
-        switch (skin)
+        char *buf = get_skin_setting_value(skin, screen);
+        if (skin == CUSTOM_STATUSBAR)
         {
-            case CUSTOM_STATUSBAR:
 #ifdef HAVE_LCD_BITMAP
-                if (skins_initialising)
-                {
-                    /* still loading, buffers not initialised yet,
-                     * viewport manager calls into the sbs code, not really
-                     * caring if the sbs has loaded or not, so just return
-                     * the gwps, this is safe. */
-                    return &skins[skin][screen].gui_wps;
-                }
-                /* during the sbs load it will call skin_get_gwps() a few times
-                 * which will eventually stkov the viewportmanager, so make
-                 * sure we don't let that happen */
-                loading_a_sbs = true;
-#if defined(HAVE_REMOTE_LCD) && NB_SCREENS > 1
-                if (screen == SCREEN_REMOTE)
-                {
-                    setting = global_settings.rsbs_file;
-                    ext = "rsbs";
-                }
-                else
-#endif
-                {
-                    setting = global_settings.sbs_file;
-                    ext = "sbs";
-                }
-#else
+            if (skins_initialising)
+            {
+                /* still loading, buffers not initialised yet,
+                 * viewport manager calls into the sbs code, not really
+                 * caring if the sbs has loaded or not, so just return
+                 * the gwps, this is safe. */
                 return &skins[skin][screen].gui_wps;
+            }
+            /* during the sbs load it will call skin_get_gwps() a few times
+             * which will eventually stkov the viewportmanager, so make
+             * sure we don't let that happen */
+            loading_a_sbs = true;
+#else
+            return &skins[skin][screen].gui_wps;
 #endif /* HAVE_LCD_BITMAP */
-                break;
-            case WPS:
-#if defined(HAVE_REMOTE_LCD) && NB_SCREENS > 1
-                if (screen == SCREEN_REMOTE)
-                {
-                    setting = global_settings.rwps_file;
-                    ext = "rwps";
-                }
-                else
-#endif
-                {
-                    setting = global_settings.wps_file;
-                    ext = "wps";
-                }
-                break;
-#if CONFIG_TUNER
-            case FM_SCREEN:
-#if defined(HAVE_REMOTE_LCD) && NB_SCREENS > 1
-                if (screen == SCREEN_REMOTE)
-                {
-                    setting = global_settings.rfms_file;
-                    ext = "rfms";
-                }
-                else
-#endif
-                {
-                    setting = global_settings.fms_file;
-                    ext = "fms";
-                }
-                break;
-#endif
-            default:
-                return NULL;
-        }
-        
-        buf[0] = '\0'; /* force it to reload the default */
-        if (strcmp(setting, "rockbox_failsafe"))
-        {
-            snprintf(buf, sizeof buf, WPS_DIR "/%s.%s", setting, ext);
         }
         cpu_boost(true);
+        strcpy(skins[skin][screen].filename, buf);
         skin_load(skin, screen, buf, true);
         cpu_boost(false);
         loading_a_sbs = false;

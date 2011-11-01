@@ -413,7 +413,7 @@ static void init(void)
     pcm_rec_init();
 #endif
 
-    settings_apply_skins();
+    settings_apply_skins(true);
 }
 
 #else
@@ -716,7 +716,7 @@ static void init(void)
     CHART(">check_bootfile(false)");
 #endif
     CHART("<settings_apply_skins");
-    settings_apply_skins();
+    settings_apply_skins(true);
     CHART(">settings_apply_skins");
 }
 
