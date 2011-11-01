@@ -359,13 +359,15 @@ int do_shortcut_menu(void *ignored)
     list.action_callback = shortcut_menu_get_action;
     list.get_icon = shortcut_menu_get_icon;
     list.title_icon = Icon_Bookmark;
+
+    push_current_activity(ACTIVITY_SHORTCUTSMENU);
     
     while (done == GO_TO_PREVIOUS)
     {
         if (simplelist_show_list(&list))
-            return GO_TO_PREVIOUS; /* some error happened?! */
+            break; /* some error happened?! */
         if (list.selection == -1)
-            return GO_TO_PREVIOUS;
+            break;
         else
         {
             sc = get_shortcut(list.selection);
@@ -416,5 +418,6 @@ int do_shortcut_menu(void *ignored)
             }
         }
     }
+    pop_current_activity();
     return done;
 }
