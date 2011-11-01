@@ -223,6 +223,8 @@ static bool is_theme_enabled(enum screen_type screen)
 int viewport_get_nb_lines(const struct viewport *vp)
 {
 #ifdef HAVE_LCD_BITMAP
+    if (!vp->line_height)
+        return vp->height/font_get(vp->font)->height;
     return vp->height/vp->line_height;
 #else
     (void)vp;

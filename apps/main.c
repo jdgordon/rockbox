@@ -412,8 +412,12 @@ static void init(void)
     scrobbler_init();
 
     audio_init();
-    
-    settings_apply_skins();
+
+#if (CONFIG_CODEC == SWCODEC) && defined(HAVE_RECORDING)
+    pcm_rec_init();
+#endif
+
+    settings_apply_skins(true);
 }
 
 #else
@@ -695,7 +699,7 @@ static void init(void)
     audio_init();
     CHART("<audio_init");
 
-#if (CONFIG_CODEC == SWCODEC) && defined(HAVE_RECORDING) && !defined(SIMULATOR)
+#if (CONFIG_CODEC == SWCODEC) && defined(HAVE_RECORDING)
     pcm_rec_init();
 #endif
 
@@ -720,7 +724,7 @@ static void init(void)
     CHART(">check_bootfile(false)");
 #endif
     CHART("<settings_apply_skins");
-    settings_apply_skins();
+    settings_apply_skins(true);
     CHART(">settings_apply_skins");
 }
 

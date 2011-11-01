@@ -221,7 +221,7 @@ void sound_settings_apply(void);
 /* call this after loading a .wps/.rwps pr other skin files, so that the
  * skin buffer is reset properly
  */
-void settings_apply_skins(void);
+void settings_apply_skins(bool force);
 void theme_init_buffer(void);
 
 void settings_apply(bool read_disk);
