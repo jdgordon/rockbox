@@ -223,7 +223,9 @@ static bool is_theme_enabled(enum screen_type screen)
 int viewport_get_nb_lines(const struct viewport *vp)
 {
 #ifdef HAVE_LCD_BITMAP
-    return vp->height/font_get(vp->font)->height;
+    if (!vp->line_height)
+        return vp->height/font_get(vp->font)->height;
+    return vp->height/vp->line_height;
 #else
     (void)vp;
     return 2;
@@ -318,6 +320,7 @@ void viewport_set_fullscreen(struct viewport *vp,
     set_default_align_flags(vp);
 #endif
     vp->font = global_status.font_id[screen];
+    vp->line_height = 0; /* calculate from font height */
     vp->drawmode = DRMODE_SOLID;
 #if LCD_DEPTH > 1
 #ifdef HAVE_REMOTE_LCD

@@ -43,6 +43,7 @@ struct viewport {
 #ifdef HAVE_LCD_BITMAP
     int flags;
     int font;
+    int line_height; /* 0 for using font height */
     int drawmode;
 #endif
 #if LCD_DEPTH > 1
@@ -555,8 +556,12 @@ extern void lcd_bitmap_transparent(const fb_data *src, int x, int y,
  * once needed
  */
 
+#if defined(LCD_DPI) && (LCD_DPI > 0)
 /* returns the pixel density of the display */
+static inline int lcd_get_dpi(void) { return LCD_DPI; }
+#else
 extern int lcd_get_dpi(void);
-#endif
+#endif /* LCD_DPI */
+#endif /* HAVE_TOUCHSCREEN */
 
 #endif /* __LCD_H__ */

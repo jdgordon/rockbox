@@ -19,6 +19,7 @@
  *
  ****************************************************************************/
 #include "elf.h"
+#include "misc.h"
 
 /**
  * Definitions
@@ -219,7 +220,8 @@ void elf_add_fill_section(struct elf_params_t *params,
     sec->pattern = pattern;
 }
 
-void elf_write_file(struct elf_params_t *params, elf_write_fn_t write, void *user)
+void elf_write_file(struct elf_params_t *params, elf_write_fn_t write,
+    elf_printf_fn_t printf, void *user)
 {
     Elf32_Ehdr ehdr;
     uint32_t phnum = 0;
@@ -235,6 +237,10 @@ void elf_write_file(struct elf_params_t *params, elf_write_fn_t write, void *use
         {
             sec->offset = offset;
             offset += sec->size;
+        }
+        else
+        {
+            sec->offset = 0;
         }
         
         phnum++;
@@ -272,10 +278,10 @@ void elf_write_file(struct elf_params_t *params, elf_write_fn_t write, void *use
 
     /* allocate enough size to hold any combinaison of .text/.bss in the string table:
      * - one empty name ("\0")
-     * - at most N names of the form ".textXX\0" or ".bssXX\0"
+     * - at most N names of the form ".textXXXX\0" or ".bssXXXX\0"
      * - one name ".shstrtab\0" */
     char *strtbl_content = malloc(1 + strlen(".shstrtab") + 1 +
-        phnum * (strlen(".textXX") + 1));
+        phnum * (strlen(".textXXXX") + 1));
     
     strtbl_content[0] = '\0';
     strcpy(&strtbl_content[1], ".shstrtab");

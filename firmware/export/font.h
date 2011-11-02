@@ -55,7 +55,7 @@ enum {
 
 /* SYSFONT, FONT_UI, FONT_UI_REMOTE + MAXUSERFONTS fonts in skins */
 #define MAXFONTS (FONT_FIRSTUSERFONT + MAXUSERFONTS)
-#define FONT_UI MAXFONTS
+#define FONT_UI MAXUSERFONTS
 
 /*
  * .fnt loadable font file format definition
@@ -100,6 +100,8 @@ struct font {
     
     /* file, buffer and cache management */
     int          fd;              /* fd for the font file. >= 0 if cached */
+    int          fd_width;        /* fd for the font file. >= 0 if cached */
+    int          fd_offset;       /* fd for the font file. >= 0 if cached */    
     unsigned char *buffer_start;    /* buffer to store the font in */       
     unsigned char *buffer_position; /* position in the buffer */    
     unsigned char *buffer_end;      /* end of the buffer */
@@ -120,13 +122,18 @@ int font_load(const char *path);
 int font_load_ex(const char *path, size_t buffer_size);
 int font_glyphs_to_bufsize(const char *path, int glyphs);
 void font_unload(int font_id);
+void font_unload_all(void);
+void font_lock(int font_id, bool lock);
+/* set the default UI font */
+void font_set_ui(int font_id);
+int  font_get_ui(void);
 
 struct font* font_get(int font);
 
 int font_getstringsize(const unsigned char *str, int *w, int *h, int fontnumber);
 int font_get_width(struct font* ft, unsigned short ch);
 const unsigned char * font_get_bits(struct font* ft, unsigned short ch);
-void glyph_cache_save(struct font* pf);
+void glyph_cache_save(int font_id);
 
 #else /* HAVE_LCD_BITMAP */
 

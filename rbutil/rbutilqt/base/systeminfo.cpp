@@ -7,7 +7,6 @@
  *                     \/            \/     \/    \/            \/
  *
  *   Copyright (C) 2010 by Dominik Wenger
- *   $Id$
  *
  * All files in this archive are subject to the GNU General Public License.
  * See the file COPYING in the source tree root for full license agreement.
@@ -58,7 +57,6 @@ const static struct {
     { SystemInfo::CurEncoder,           ":platform:/encoder",   "" },
     { SystemInfo::CurBrand,             ":platform:/brand",     "" },
     { SystemInfo::CurName,              ":platform:/name",      "" },
-    { SystemInfo::CurBuildserverModel,  ":platform:/buildserver_modelname", "" },
     { SystemInfo::CurConfigureModel,    ":platform:/configure_modelname", "" },
 };
 

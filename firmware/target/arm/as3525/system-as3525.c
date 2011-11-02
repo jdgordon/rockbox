@@ -184,7 +184,7 @@ static void check_model_variant(void)
     c200v2_variant = !GPIOA_PIN(7);
     GPIOA_DIR = saved_dir;
 }
-#elif defined(SANSA_FUZEV2) || defined(SANSA_CLIPPLUS)
+#elif defined(SANSA_FUZEV2) || defined(SANSA_CLIPPLUS) || defined(SANSA_CLIPZIP)
 int amsv2_variant;
 
 static void check_model_variant(void)
@@ -285,7 +285,11 @@ void system_init(void)
     ascodec_write_pmu(0x18, 1, 0x35);
     /* AVDD17:    set AVDD17 power supply to 2.5V */
     ascodec_write_pmu(0x18, 7, 0x31);
-#else
+#ifdef SANSA_CLIPZIP
+    /* CVDD2:     set CVDD2 power supply to 2.8V */
+    ascodec_write_pmu(0x17, 2, 0xF4);
+#endif
+#else /* HAVE_AS3543 */
     ascodec_write(AS3514_CVDD_DCDC3, AS314_CP_DCDC3_SETTING);
 #endif /* HAVE_AS3543 */
 
