@@ -347,7 +347,7 @@ static int settings_loadcfg_callback(int n, char *buf, void *parameters)
                     break;
                 }
             }
-            if (!needs_apply)
+            if (!(*needs_apply))
             {
                 bool has_callback = false;
 #define CALL_CALLBACK(callback, pointer) if (callback) { callback(pointer); has_callback = true; }
