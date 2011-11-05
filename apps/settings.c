@@ -264,16 +264,24 @@ bool cfg_string_to_int(int setting_id, int* out, const char* str)
 static int settings_loadcfg_callback(int n, char *buf, void *parameters)
 {
     (void)n;
-    intptr_t *needs_apply = (intptr_t*)parameters;
-    int i;
+    int *params = (int*)parameters;
+    int *needs_apply = &params[1];
+    int checked = 0;
     char* name;
     char* value;
+    int i = params[0] % nb_settings;
     if (!settings_parseline(buf, &name, &value))
         return 0;
-    for(i=0; i<nb_settings; i++)
+    while (checked < nb_settings)
     {
+        if (i == nb_settings)
+            i = 0;
         if (settings[i].cfg_name == NULL)
+        {
+            i++;
+            checked++;
             continue;
+        }
         if (!strcasecmp(name,settings[i].cfg_name))
         {
             switch (settings[i].flags&F_T_MASK)
@@ -386,9 +394,12 @@ static int settings_loadcfg_callback(int n, char *buf, void *parameters)
                 }
                 if (!has_callback)
                     *needs_apply = 1;
+                params[0] = i;
             }
             break;
         } /* if (!strcmp(name,settings[i].cfg_name)) */
+        i++;
+        checked++;
     } /* for(...) */
     return 0;
 }
@@ -397,15 +408,15 @@ bool settings_load_config(const char* file, bool apply)
 {
     int fd;
     char line[128];
-    intptr_t needs_apply = 0;
+    int params[2] = {0,0};
     fd = open_utf8(file, O_RDONLY);
     if (fd < 0)
         return false;
 
-    fast_readline(fd, line, sizeof line, &needs_apply, settings_loadcfg_callback);
+    fast_readline(fd, line, sizeof line, params, settings_loadcfg_callback);
 
     close(fd);
-    if (apply && needs_apply)
+    if (apply && params[1])
     {
         settings_save();
         settings_apply(true);
