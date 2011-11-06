@@ -30,6 +30,10 @@
 typedef long skinoffset;
 #define SKINOFFSETTOPTR(base, offset) ((offset) < 0 ? NULL : ((void*)&base[offset]))
 #define PTRTOSKINOFFSET(base, pointer) ((pointer) ? ((void*)pointer-(void*)base) : -1)
+/* Use this macro when declaring a variable to self-document the code.
+ * type is the actual type being pointed to (i.e OFFSETTYPE(char*) foo )
+ */
+#define OFFSETTYPE(type) skinoffset
 extern char skin_buffer[];
 
 /* Timeout unit expressed in HZ. In WPS, all timeouts are given in seconds
@@ -77,14 +81,14 @@ extern char skin_buffer[];
 
 #ifdef HAVE_LCD_BITMAP
 struct gui_img {
-    skinoffset vp;    /* The viewport to display this image in */
+    OFFSETTYPE(struct viewport*) vp;    /* The viewport to display this image in */
     short int x;                  /* x-pos */
     short int y;                  /* y-pos */
     short int num_subimages;      /* number of sub-images */
     short int subimage_height;    /* height of each sub-image */
     struct bitmap bm;
     int buflib_handle;
-    skinoffset label;
+    OFFSETTYPE(char*) label;
     bool loaded;            /* load state */
     bool always_display;    /* not using the preload/display mechanism */
     int display;
@@ -92,9 +96,9 @@ struct gui_img {
 };
 
 struct image_display {
-    skinoffset label;
+    OFFSETTYPE(char*) label;
     int subimage;
-    skinoffset token; /* the token to get the subimage number from */
+    OFFSETTYPE(struct wps_token*) token; /* the token to get the subimage number from */
     int offset; /* offset into the bitmap strip to start */
 };
 
