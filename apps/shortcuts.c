@@ -233,7 +233,7 @@ int readline_cb(int n, char *buf, void *parameters)
         {
             int t = 0;
             for (t=0; t<SHORTCUT_TYPE_COUNT && sc->type == SHORTCUT_UNDEFINED; t++)
-                if (!strncmp(value, type_strings[t], strlen(type_strings[t])))
+                if (!strcmp(value, type_strings[t]))
                     sc->type = t;
         }
         else if (!strcmp(name, "name"))
@@ -401,8 +401,6 @@ int do_shortcut_menu(void *ignored)
                     if (sc->type == SHORTCUT_FILE)
                         browse.flags |= BROWSE_RUNFILE;
                     done = rockbox_browse(&browse);
-                    if (done == GO_TO_ROOT)
-                        done = GO_TO_PREVIOUS;
                 }
                 break;
                 case SHORTCUT_SETTING:
