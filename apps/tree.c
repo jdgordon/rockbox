@@ -708,7 +708,7 @@ static int dirbrowse(void)
                     exit_func = true;
                     break;
                 }
-                if ((tc.dirlevel == 0) ||
+                if ((*tc.dirfilter == SHOW_ID3DB && tc.dirlevel == 0) ||
                     ((*tc.dirfilter != SHOW_ID3DB && !strcmp(currdir,"/"))))
                 {
 #ifdef HAVE_LCD_BITMAP /* charcell doesnt have ACTION_TREE_PGLEFT so this isnt needed */
@@ -1000,7 +1000,6 @@ int rockbox_browse(struct browse_context *browse)
         tc.browse = browse;
         strcpy(current, browse->root);
         set_current_file(current);
-        tc.dirlevel = 0;
         if (browse->flags&BROWSE_RUNFILE)
             ret_val = ft_enter(&tc);
         else
