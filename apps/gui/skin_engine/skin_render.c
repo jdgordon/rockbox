@@ -184,11 +184,11 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
         case SKIN_TOKEN_IMAGE_PRELOAD_DISPLAY:
         {
             struct image_display *id = token->value.data;
-            const char* label = id->label;
+            const char* label = SKINOFFSETTOPTR(skin_buffer, id->label);
             struct gui_img *img = skin_find_item(label,SKIN_FIND_IMAGE, data);
             if (img && img->loaded)
             {
-                if (id->token == NULL)
+                if (SKINOFFSETTOPTR(skin_buffer, id->token) == NULL)
                 {
                     img->display = id->subimage;
                 }
@@ -197,8 +197,8 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                     char buf[16];
                     const char *out;
                     int a = img->num_subimages;
-                    out = get_token_value(gwps, id->token, info->offset, 
-                                          buf, sizeof(buf), &a);
+                    out = get_token_value(gwps, SKINOFFSETTOPTR(skin_buffer, id->token),
+                            info->offset, buf, sizeof(buf), &a);
 
                     /* NOTE: get_token_value() returns values starting at 1! */
                     if (a == -1)
@@ -331,7 +331,7 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
             if (token->type == SKIN_TOKEN_IMAGE_PRELOAD_DISPLAY)
             {
                 struct image_display *id = token->value.data;
-                struct gui_img *img = skin_find_item(id->label, 
+                struct gui_img *img = skin_find_item(SKINOFFSETTOPTR(skin_buffer, id->label), 
                                                      SKIN_FIND_IMAGE, data);
                 clear_image_pos(gwps, img);
             }

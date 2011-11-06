@@ -28,8 +28,8 @@
 /* Use this type and macro to convert a pointer from the
  * skin buffer to a useable pointer */
 typedef long skinoffset;
-#define SKINOFFSETTOPTR(base, offset) ((void*)&base[offset])
-#define PTRTOSKINOFFSET(base, pointer) ((void*)pointer-(void*)base)
+#define SKINOFFSETTOPTR(base, offset) ((offset) < 0 ? NULL : ((void*)&base[offset]))
+#define PTRTOSKINOFFSET(base, pointer) ((pointer) ? ((void*)pointer-(void*)base) : -1)
 extern char skin_buffer[];
 
 /* Timeout unit expressed in HZ. In WPS, all timeouts are given in seconds
@@ -92,9 +92,9 @@ struct gui_img {
 };
 
 struct image_display {
-    const char *label;
+    skinoffset label;
     int subimage;
-    struct wps_token *token; /* the token to get the subimage number from */
+    skinoffset token; /* the token to get the subimage number from */
     int offset; /* offset into the bitmap strip to start */
 };
 

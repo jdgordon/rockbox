@@ -295,9 +295,9 @@ static int parse_image_display(struct skin_element *element,
     {
         return WPS_ERROR_INVALID_PARAM;
     }
-    id->label = label;
+    id->label = PTRTOSKINOFFSET(skin_buffer, label);
     id->offset = 0;
-    id->token = NULL;
+    id->token = PTRTOSKINOFFSET(skin_buffer, NULL);
     if (img->using_preloaded_icons)
     {
         token->type = SKIN_TOKEN_IMAGE_DISPLAY_LISTICON;
