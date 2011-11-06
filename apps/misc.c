@@ -879,6 +879,7 @@ void system_sound_play(enum system_sound sound)
 /* Produce keyclick based upon button and global settings */
 void keyclick_click(int button)
 {
+    static long last_button = BUTTON_NONE;
     /* Settings filters */
     if (
 #ifdef HAVE_HARDWARE_CLICK
@@ -892,20 +893,35 @@ void keyclick_click(int button)
         if (button != BUTTON_NONE && !(button & BUTTON_REL)
             && !(button & (SYS_EVENT|BUTTON_MULTIMEDIA)) )
         {
+            if (((button & BUTTON_REPEAT) && (last_button == BUTTON_NONE))
+#ifdef HAVE_SCROLLWHEEL
+            || (last_button & (BUTTON_SCROLL_BACK | BUTTON_SCROLL_FWD))
+#endif
+            || (!(button&BUTTON_REPEAT)))
+            {
+                if (button&BUTTON_REPEAT)
+                    last_button = button;
+                else
+                    last_button = BUTTON_NONE;
 #ifdef HAVE_HARDWARE_CLICK
-            if (global_settings.keyclick)
-            {
-                system_sound_play(SOUND_KEYCLICK);
-            }
-            if (global_settings.keyclick_hardware)
-            {
+                if (global_settings.keyclick)
+                {
+                    system_sound_play(SOUND_KEYCLICK);
+                }
+                if (global_settings.keyclick_hardware)
+                {
 #if !defined(SIMULATOR)
-                piezo_button_beep(false, false);
+                    piezo_button_beep(false, false);
+#endif
+                }
+#else
+                system_sound_play(SOUND_KEYCLICK);
 #endif
             }
-#else
-            system_sound_play(SOUND_KEYCLICK);
-#endif
+        }
+        else
+        {
+            button = BUTTON_NONE;
         }
     }
 }
