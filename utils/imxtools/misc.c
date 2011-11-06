@@ -29,6 +29,14 @@ bool g_debug = false;
 /**
  * Misc
  */
+
+void *memdup(void *p, size_t len)
+{
+    void *cpy = xmalloc(len);
+    memcpy(cpy, p, len);
+    return cpy;
+}
+
 void generate_random_data(void *buf, size_t sz)
 {
     FILE *rand_fd = fopen("/dev/urandom", "rb");
@@ -144,6 +152,12 @@ void add_keys(key_array_t ka, int kac)
     g_nr_keys += kac;
 }
 
+void clear_keys()
+{
+    free(g_key_array);
+    g_nr_keys = 0;
+}
+
 void add_keys_from_file(const char *key_file)
 {
     int size;
@@ -210,4 +224,25 @@ void print_key(struct crypto_key_t *key, bool newline)
     }
     if(newline)
         printf("\n");
+}
+
+char OFF[] = { 0x1b, 0x5b, 0x31, 0x3b, '0', '0', 0x6d, '\0' };
+
+char GREY[] = { 0x1b, 0x5b, 0x31, 0x3b, '3', '0', 0x6d, '\0' };
+char RED[] = { 0x1b, 0x5b, 0x31, 0x3b, '3', '1', 0x6d, '\0' };
+char GREEN[] = { 0x1b, 0x5b, 0x31, 0x3b, '3', '2', 0x6d, '\0' };
+char YELLOW[] = { 0x1b, 0x5b, 0x31, 0x3b, '3', '3', 0x6d, '\0' };
+char BLUE[] = { 0x1b, 0x5b, 0x31, 0x3b, '3', '4', 0x6d, '\0' };
+
+static bool g_color_enable = true;
+
+void enable_color(bool enable)
+{
+    g_color_enable = enable;
+}
+
+void color(color_t c)
+{
+    if(g_color_enable)
+        printf("%s", (char *)c);
 }

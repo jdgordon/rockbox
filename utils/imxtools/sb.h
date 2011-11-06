@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "misc.h"
+
 #define BLOCK_SIZE      16
 
 /* All fields are in big-endian BCD */
@@ -161,12 +163,12 @@ struct sb_inst_t
 {
     uint8_t inst; /* SB_INST_* */
     uint32_t size;
+    uint32_t addr;
     // <union>
     void *data;
     uint32_t pattern;
-    uint32_t addr;
     // </union>
-    uint32_t argument; // for call and jump
+    uint32_t argument; // for call, jump and mode
     /* for production use */
     uint32_t padding_size;
     uint8_t *padding;
@@ -189,11 +191,17 @@ struct sb_section_t
 struct sb_file_t
 {
     /* override real, otherwise it is randomly generated */
-    uint8_t (*real_key)[16];
+    bool override_real_key;
+    uint8_t real_key[16];
     /* override crypto IV, use with caution ! Use NULL to generate it */
-    uint8_t (*crypto_iv)[16];
+    bool override_crypto_iv;
+    uint8_t crypto_iv[16];
     
     int nr_sections;
+    uint16_t drive_tag;
+    uint32_t first_boot_sec_id;
+    uint16_t flags;
+    uint8_t minor_version;
     struct sb_section_t *sections;
     struct sb_version_t product_ver;
     struct sb_version_t component_ver;
@@ -201,6 +209,29 @@ struct sb_file_t
     uint32_t image_size; /* in blocks */
 };
 
-void sb_produce_file(struct sb_file_t *sb, const char *filename);
+enum sb_error_t
+{
+    SB_SUCCESS = 0,
+    SB_ERROR = -1,
+    SB_OPEN_ERROR = -2,
+    SB_READ_ERROR = -3,
+    SB_WRITE_ERROR = -4,
+    SB_FORMAT_ERROR = -5,
+    SB_CHECKSUM_ERROR = -6,
+    SB_NO_VALID_KEY = -7,
+    SB_FIRST_CRYPTO_ERROR = -8,
+    SB_LAST_CRYPTO_ERROR = SB_FIRST_CRYPTO_ERROR - CRYPTO_NUM_ERRORS,
+};
+
+enum sb_error_t sb_write_file(struct sb_file_t *sb, const char *filename);
+
+typedef void (*sb_color_printf)(void *u, bool err, color_t c, const char *f, ...);
+struct sb_file_t *sb_read_file(const char *filename, bool raw_mode, void *u,
+    sb_color_printf printf, enum sb_error_t *err);
+
+void sb_fill_section_name(char name[5], uint32_t identifier);
+void sb_dump(struct sb_file_t *file, void *u, sb_color_printf printf);
+void sb_free_section(struct sb_section_t file);
+void sb_free(struct sb_file_t *file);
 
 #endif /* __SB_H__ */
