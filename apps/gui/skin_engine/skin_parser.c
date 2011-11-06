@@ -168,7 +168,7 @@ void *skin_find_item(const char *label, enum skin_find_what what,
 #ifdef HAVE_LCD_BITMAP
             case SKIN_FIND_IMAGE:
                 ret = list.linkedlist->token->value.data;
-                itemlabel = ((struct gui_img *)ret)->label;
+                itemlabel = SKINOFFSETTOPTR(skin_buffer, ((struct gui_img *)ret)->label);
                 break;
 #endif
 #ifdef HAVE_TOUCHSCREEN
@@ -358,7 +358,7 @@ static int parse_image_load(struct skin_element *element,
         return WPS_ERROR_INVALID_PARAM;
     /* save a pointer to the filename */
     img->bm.data = (char*)filename;
-    img->label = id;
+    img->label = PTRTOSKINOFFSET(skin_buffer, id);
     img->x = x;
     img->y = y;
     img->num_subimages = 1;
@@ -368,7 +368,7 @@ static int parse_image_load(struct skin_element *element,
     img->buflib_handle = -1;
 
     /* save current viewport */
-    img->vp = &curr_vp->vp;
+    img->vp = PTRTOSKINOFFSET(skin_buffer, &curr_vp->vp);
 
     if (token->type == SKIN_TOKEN_IMAGE_DISPLAY)
     {
@@ -924,7 +924,7 @@ static int parse_progressbar_tag(struct skin_element* element,
                 return WPS_ERROR_INVALID_PARAM;
             /* save a pointer to the filename */
             img->bm.data = (char*)image_filename;
-            img->label = image_filename;
+            img->label = PTRTOSKINOFFSET(skin_buffer, image_filename);
             img->x = 0;
             img->y = 0;
             img->num_subimages = 1;
@@ -932,7 +932,7 @@ static int parse_progressbar_tag(struct skin_element* element,
             img->display = -1;
             img->using_preloaded_icons = false;
             img->buflib_handle = -1;
-            img->vp = &curr_vp->vp;
+            img->vp = PTRTOSKINOFFSET(skin_buffer, &curr_vp->vp);
             struct skin_token_list *item = 
                     (struct skin_token_list *)new_skin_token_list_item(NULL, img);
             if (!item)

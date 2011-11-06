@@ -25,6 +25,12 @@
 #ifndef _WPS_ENGINE_INTERNALS_
 #define _WPS_ENGINE_INTERNALS_
 
+/* Use this type and macro to convert a pointer from the
+ * skin buffer to a useable pointer */
+typedef long skinoffset;
+#define SKINOFFSETTOPTR(base, offset) ((void*)&base[offset])
+#define PTRTOSKINOFFSET(base, pointer) ((void*)pointer-(void*)base)
+extern char skin_buffer[];
 
 /* Timeout unit expressed in HZ. In WPS, all timeouts are given in seconds
    (possibly with a decimal fraction) but stored as integer values.
@@ -71,14 +77,14 @@
 
 #ifdef HAVE_LCD_BITMAP
 struct gui_img {
-    struct viewport* vp;    /* The viewport to display this image in */
+    skinoffset vp;    /* The viewport to display this image in */
     short int x;                  /* x-pos */
     short int y;                  /* y-pos */
     short int num_subimages;      /* number of sub-images */
     short int subimage_height;    /* height of each sub-image */
     struct bitmap bm;
     int buflib_handle;
-    const char *label;
+    skinoffset label;
     bool loaded;            /* load state */
     bool always_display;    /* not using the preload/display mechanism */
     int display;

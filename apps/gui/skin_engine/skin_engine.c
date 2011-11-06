@@ -48,7 +48,7 @@ void theme_init_buffer(void)
     skins_initialising = false;
 }
 #else
-static char skin_buffer[SKIN_BUFFER_SIZE];
+char skin_buffer[SKIN_BUFFER_SIZE];
 void theme_init_buffer(void)
 {
     skins_initialising = false;

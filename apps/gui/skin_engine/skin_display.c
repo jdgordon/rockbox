@@ -406,7 +406,7 @@ void wps_display_images(struct gui_wps *gwps, struct viewport* vp)
             {
                 wps_draw_image(gwps, img, img->display);
             }
-            else if (img->always_display && img->vp == vp)
+            else if (img->always_display && SKINOFFSETTOPTR(skin_buffer, img->vp) == vp)
             {
                 wps_draw_image(gwps, img, 0);
             }
