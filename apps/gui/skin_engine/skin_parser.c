@@ -133,7 +133,7 @@ void *skin_find_item(const char *label, enum skin_find_what what,
     {
         case SKIN_FIND_UIVP:
         case SKIN_FIND_VP:
-            list.vplist = data->tree;
+            list.vplist = SKINOFFSETTOPTR(skin_buffer, data->tree);
             isvplist = true;
         break;
 #ifdef HAVE_LCD_BITMAP
@@ -230,7 +230,7 @@ static int parse_statusbar_tags(struct skin_element* element,
     }
     else
     {
-        struct skin_element *def_vp = wps_data->tree;
+        struct skin_element *def_vp = SKINOFFSETTOPTR(skin_buffer, wps_data->tree);
         struct skin_viewport *default_vp = def_vp->data;
         if (def_vp->params_count == 0)
         {
@@ -759,7 +759,7 @@ static int parse_substring_tag(struct skin_element* element,
         ss->length = -1;
     else
         ss->length = element->params[1].data.number;
-    ss->token = element->params[2].data.code->data;
+    ss->token = PTRTOSKINOFFSET(skin_buffer, element->params[2].data.code->data);
     token->value.data = ss;
     return 0;
 }
@@ -1472,7 +1472,7 @@ static void skin_data_reset(struct wps_data *wps_data)
 #ifdef HAVE_LCD_BITMAP
     wps_data->images = NULL;
 #endif
-    wps_data->tree = NULL;
+    wps_data->tree = PTRTOSKINOFFSET(skin_buffer, NULL);
 #if LCD_DEPTH > 1 || defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1
     if (wps_data->backdrop_id >= 0)
         skin_backdrop_unload(wps_data->backdrop_id);
@@ -1638,7 +1638,7 @@ static bool skin_load_fonts(struct wps_data *data)
     struct skin_element *vp_list;
     int font_id;
     /* walk though each viewport and assign its font */
-    for(vp_list = data->tree; vp_list; vp_list = vp_list->next)
+    for(vp_list = SKINOFFSETTOPTR(skin_buffer, data->tree); vp_list; vp_list = vp_list->next)
     {
         /* first, find the viewports that have a non-sys/ui-font font */
         struct skin_viewport *skin_vp =
@@ -1748,8 +1748,8 @@ static int convert_viewport(struct wps_data *data, struct skin_element* element)
     struct skin_tag_parameter *param = element->params;
     if (element->params_count == 0) /* default viewport */
     {
-        if (!data->tree) /* first viewport in the skin */
-            data->tree = element;
+        if (!SKINOFFSETTOPTR(skin_buffer, data->tree)) /* first viewport in the skin */
+            data->tree = PTRTOSKINOFFSET(skin_buffer, element);
         skin_vp->label = VP_DEFAULT_LABEL;
         return CALLBACK_OK;
     }
@@ -2122,8 +2122,9 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
 #ifndef APPLICATION
     skin_buffer_save_position();
 #endif
-    wps_data->tree = skin_parse(wps_buffer, skin_element_callback, wps_data);
-    if (!wps_data->tree) {
+    struct skin_element *tree = skin_parse(wps_buffer, skin_element_callback, wps_data);
+    wps_data->tree = PTRTOSKINOFFSET(skin_buffer, tree);
+    if (!SKINOFFSETTOPTR(skin_buffer, wps_data->tree)) {
         skin_data_reset(wps_data);
 #ifndef APPLICATION
         skin_buffer_restore_position();

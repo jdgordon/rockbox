@@ -872,7 +872,8 @@ const char *get_token_value(struct gui_wps *gwps,
         case SKIN_TOKEN_SUBSTRING:
         {
             struct substring *ss = token->value.data;
-            const char *token_val = get_token_value(gwps, ss->token, offset,
+            const char *token_val = get_token_value(gwps, 
+                            SKINOFFSETTOPTR(skin_buffer, ss->token), offset,
                                                     buf, buf_size, intval);
             if (token_val)
             {

@@ -302,7 +302,7 @@ struct logical_if {
 struct substring {
     int start;
     int length;
-    struct wps_token *token;
+    OFFSETTYPE(struct wps_token *) token;
 };
 
 struct listitem {
@@ -333,7 +333,7 @@ struct skin_var_changer {
    viewable content of a wps */
 struct wps_data
 {
-    struct skin_element *tree;
+    OFFSETTYPE(struct skin_element *) tree;
 #ifdef HAVE_LCD_BITMAP
     struct skin_token_list *images;
     int *font_ids;

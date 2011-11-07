@@ -182,7 +182,7 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
         is_selected = list->show_selection_marker &&
                 list_start_item+cur_line == list->selected_item;
         
-        for (viewport = listcfg[screen]->data->tree;
+        for (viewport = SKINOFFSETTOPTR(skin_buffer, listcfg[screen]->data->tree);
              viewport;
              viewport = viewport->next)
         {

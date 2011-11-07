@@ -127,7 +127,7 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
         {
             char *label = token->value.data;
             char temp = VP_DRAW_HIDEABLE;
-            struct skin_element *viewport = gwps->data->tree;
+            struct skin_element *viewport = SKINOFFSETTOPTR(skin_buffer, gwps->data->tree);
             while (viewport)
             {
                 struct skin_viewport *skinvp = (struct skin_viewport*)viewport->data;
@@ -343,7 +343,7 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
             {
                 char *label = token->value.data;
                 struct skin_element *viewport;
-                for (viewport = data->tree;
+                for (viewport = SKINOFFSETTOPTR(skin_buffer, data->tree);
                      viewport;
                      viewport = viewport->next)
                 {
@@ -741,13 +741,13 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
             data->wps_progress_pat[i] = display->get_locked_pattern();
     }
 #endif
-    viewport = data->tree;
+    viewport = SKINOFFSETTOPTR(skin_buffer, data->tree);
     skin_viewport = (struct skin_viewport *)viewport->data;
     if (skin_viewport->label && viewport->next &&
         !strcmp(skin_viewport->label,VP_DEFAULT_LABEL))
         refresh_mode = 0;
     
-    for (viewport = data->tree;
+    for (viewport = SKINOFFSETTOPTR(skin_buffer, data->tree);
          viewport;
          viewport = viewport->next)
     {
