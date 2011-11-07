@@ -104,7 +104,7 @@ struct image_display {
 
 struct progressbar {
     enum skin_token_type type;
-    struct viewport *vp;
+    OFFSETTYPE(struct viewport *) vp;
     /* regular pb */
     short x;
     /* >=0: explicitly set in the tag -> y-coord within the viewport
@@ -115,14 +115,14 @@ struct progressbar {
     short height;
     bool  follow_lang_direction;
     
-    struct gui_img *image;
+    OFFSETTYPE(struct gui_img *) image;
     
     bool invert_fill_direction;
     bool nofill;
     bool nobar;
-    struct gui_img *slider;
+    OFFSETTYPE(struct gui_img *) slider;
     bool horizontal;
-    struct gui_img *backdrop;
+    OFFSETTYPE(struct gui_img *) backdrop;
 };
 #endif
 

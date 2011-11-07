@@ -131,7 +131,7 @@ void skin_statusbar_changed(struct gui_wps *skin)
 void draw_progressbar(struct gui_wps *gwps, int line, struct progressbar *pb)
 {
     struct screen *display = gwps->display;
-    struct viewport *vp = pb->vp;
+    struct viewport *vp = SKINOFFSETTOPTR(skin_buffer, pb->vp);
     struct wps_state *state = skin_get_global_state();
     struct mp3entry *id3 = state->id3;
     int x = pb->x, y = pb->y, width = pb->width, height = pb->height;
@@ -226,9 +226,9 @@ void draw_progressbar(struct gui_wps *gwps, int line, struct progressbar *pb)
         flags |= INNER_NOFILL;
     }
 
-    if (pb->slider)
+    if (SKINOFFSETTOPTR(skin_buffer, pb->slider))
     {
-        struct gui_img *img = pb->slider;
+        struct gui_img *img = SKINOFFSETTOPTR(skin_buffer, pb->slider);
         /* clear the slider */
         screen_clear_area(display, x, y, width, height);
 
@@ -245,9 +245,9 @@ void draw_progressbar(struct gui_wps *gwps, int line, struct progressbar *pb)
         }
     }
     
-    if (pb->backdrop)
+    if (SKINOFFSETTOPTR(skin_buffer, pb->backdrop))
     {
-        struct gui_img *img = pb->backdrop;
+        struct gui_img *img = SKINOFFSETTOPTR(skin_buffer, pb->backdrop);
         char *img_data = core_get_data(img->buflib_handle);
 #if LCD_DEPTH > 1
         if(img->bm.format == FORMAT_MONO) {
@@ -269,11 +269,12 @@ void draw_progressbar(struct gui_wps *gwps, int line, struct progressbar *pb)
     
     if (!pb->nobar)
     {
-        if (pb->image)
+        struct gui_img *img = SKINOFFSETTOPTR(skin_buffer, pb->image);
+        if (img)
         {
-            char *img_data = core_get_data(pb->image->buflib_handle);
-            pb->image->bm.data = img_data;
-            gui_bitmap_scrollbar_draw(display, &pb->image->bm,
+            char *img_data = core_get_data(img->buflib_handle);
+            img->bm.data = img_data;
+            gui_bitmap_scrollbar_draw(display, &img->bm,
                                     x, y, width, height,
                                     length, 0, end, flags);
         }
@@ -282,11 +283,11 @@ void draw_progressbar(struct gui_wps *gwps, int line, struct progressbar *pb)
                                length, 0, end, flags);
     }
 
-    if (pb->slider)
+    if (SKINOFFSETTOPTR(skin_buffer, pb->slider))
     {
         int xoff = 0, yoff = 0;
         int w = width, h = height;
-        struct gui_img *img = pb->slider;
+        struct gui_img *img = SKINOFFSETTOPTR(skin_buffer, pb->slider);
         char *img_data = core_get_data(img->buflib_handle);
 
         if (flags&HORIZONTAL)

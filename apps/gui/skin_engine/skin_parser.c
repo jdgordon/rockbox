@@ -784,13 +784,13 @@ static int parse_progressbar_tag(struct skin_element* element,
     
     if (!pb)
         return WPS_ERROR_INVALID_PARAM;
-    pb->vp = vp;
+    pb->vp = PTRTOSKINOFFSET(skin_buffer, vp);
     pb->follow_lang_direction = follow_lang_direction > 0;
     pb->nofill = false;
     pb->nobar = false;
-    pb->image = NULL;
-    pb->slider = NULL;
-    pb->backdrop = NULL;
+    pb->image = PTRTOSKINOFFSET(skin_buffer, NULL);
+    pb->slider = PTRTOSKINOFFSET(skin_buffer, NULL);
+    pb->backdrop = PTRTOSKINOFFSET(skin_buffer, NULL);
     pb->invert_fill_direction = false;
     pb->horizontal = true;
     
@@ -869,8 +869,9 @@ static int parse_progressbar_tag(struct skin_element* element,
             {
                 curr_param++;
                 param++;
-                pb->slider = skin_find_item(param->data.text, 
-                                            SKIN_FIND_IMAGE, wps_data);
+                pb->slider = PTRTOSKINOFFSET(skin_buffer,
+                        skin_find_item(param->data.text, 
+                                    SKIN_FIND_IMAGE, wps_data));
             }
             else /* option needs the next param */
                 return -1;
@@ -893,8 +894,9 @@ static int parse_progressbar_tag(struct skin_element* element,
             {
                 curr_param++;
                 param++;
-                pb->backdrop = skin_find_item(param->data.text, 
-                                              SKIN_FIND_IMAGE, wps_data);
+                pb->backdrop = PTRTOSKINOFFSET(skin_buffer, 
+                        skin_find_item(param->data.text, 
+                                        SKIN_FIND_IMAGE, wps_data));
                 
             }
             else /* option needs the next param */
@@ -916,8 +918,9 @@ static int parse_progressbar_tag(struct skin_element* element,
 
     if (image_filename)
     {
-        pb->image = skin_find_item(image_filename, SKIN_FIND_IMAGE, wps_data);
-        if (!pb->image) /* load later */
+        pb->image = PTRTOSKINOFFSET(skin_buffer, 
+                skin_find_item(image_filename, SKIN_FIND_IMAGE, wps_data));
+        if (!SKINOFFSETTOPTR(skin_buffer, pb->image)) /* load later */
         {           
             struct gui_img* img = (struct gui_img*)skin_buffer_alloc(sizeof(struct gui_img));
             if (!img)
@@ -938,7 +941,7 @@ static int parse_progressbar_tag(struct skin_element* element,
             if (!item)
                 return WPS_ERROR_INVALID_PARAM;
             add_to_ll_chain(&wps_data->images, item);
-            pb->image = img;
+            pb->image = PTRTOSKINOFFSET(skin_buffer, img);
         }
     }    
         
