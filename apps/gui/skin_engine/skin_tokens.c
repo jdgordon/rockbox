@@ -1476,8 +1476,9 @@ const char *get_token_value(struct gui_wps *gwps,
 #ifdef HAVE_TOUCHSCREEN
             unsigned int last_touch = touchscreen_last_touch();
             struct touchregion_lastpress *data = token->value.data;
-            if (data->region)
-                last_touch = data->region->last_press;
+            struct touchregion *region = SKINOFFSETTOPTR(skin_buffer, data->region);
+            if (region)
+                last_touch = region->last_press;
 
             if (last_touch != 0xffff &&
                 TIME_BEFORE(current_tick, data->timeout + last_touch))

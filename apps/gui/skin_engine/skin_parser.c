@@ -184,7 +184,7 @@ void *skin_find_item(const char *label, enum skin_find_what what,
 #ifdef HAVE_TOUCHSCREEN
             case SKIN_FIND_TOUCHREGION:
                 ret = list.linkedlist->token->value.data;
-                itemlabel = ((struct touchregion *)ret)->label;
+                itemlabel = SKINOFFSETTOPTR(skin_buffer, ((struct touchregion *)ret)->label);
                 break;
 #endif
 #ifdef HAVE_SKIN_VARIABLES
@@ -1172,21 +1172,23 @@ static int parse_lasttouch(struct skin_element *element,
             (struct touchregion_lastpress*)skin_buffer_alloc(
                                 sizeof(struct touchregion_lastpress));
     int i;
+    struct touchregion *region = NULL;
     if (!data)
         return WPS_ERROR_INVALID_PARAM;
-    data->region = NULL;
+    
     data->timeout = 10;
     
     for (i=0; i<element->params_count; i++)
     {
         if (element->params[i].type == STRING)
-            data->region = skin_find_item(element->params[i].data.text,
+            region = skin_find_item(element->params[i].data.text,
                                           SKIN_FIND_TOUCHREGION, wps_data);
         else if (element->params[i].type == INTEGER ||
                  element->params[i].type == DECIMAL)
             data->timeout = element->params[i].data.number;
     }
 
+    data->region = PTRTOSKINOFFSET(skin_buffer, region);
     data->timeout *= TIMEOUT_UNIT;
     token->value.data = data;
     return 0;
@@ -1252,7 +1254,7 @@ static int touchregion_setup_setting(struct skin_element *element, int param_no,
         switch (settings[j].flags&F_T_MASK)
         {
         case F_T_CUSTOM:
-            setting->value.text = text;
+            setting->value.text = PTRTOSKINOFFSET(skin_buffer, text);
             break;                              
         case F_T_INT:
         case F_T_UINT:
@@ -1314,7 +1316,7 @@ static int parse_touchregion(struct skin_element *element,
     
     if (element->params[0].type == STRING)
     {
-        region->label = element->params[0].data.text;
+        region->label = PTRTOSKINOFFSET(skin_buffer, element->params[0].data.text);
         p = 1;
         /* "[SI]III[SI]|SS" is the param list. There MUST be 4 numbers
          * followed by at least one string. Verify that here */
@@ -1324,7 +1326,7 @@ static int parse_touchregion(struct skin_element *element,
     }
     else
     {
-        region->label = NULL;
+        region->label = PTRTOSKINOFFSET(skin_buffer, NULL);
         p = 0;
     }
     
@@ -1332,7 +1334,7 @@ static int parse_touchregion(struct skin_element *element,
     region->y = element->params[p++].data.number;
     region->width = element->params[p++].data.number;
     region->height = element->params[p++].data.number;
-    region->wvp = curr_vp;
+    region->wvp = PTRTOSKINOFFSET(skin_buffer, curr_vp);
     region->armed = false;
     region->reverse_bar = false;
     region->value = 0;

@@ -56,6 +56,7 @@ int skin_get_touchaction(struct wps_data *data, int* edge_offset,
     short x,y;
     short vx, vy;
     int type = action_get_touchscreen_press(&x, &y);
+    struct skin_viewport *wvp;
     struct touchregion *r, *temp = NULL;
     bool repeated = (type == BUTTON_REPEAT);
     bool released = (type == BUTTON_REL);
@@ -66,8 +67,9 @@ int skin_get_touchaction(struct wps_data *data, int* edge_offset,
     while (regions)
     {
         r = (struct touchregion *)regions->token->value.data;
+        wvp = SKINOFFSETTOPTR(skin_buffer, r->wvp);
         /* make sure this region's viewport is visible */
-        if (r->wvp->hidden_flags&VP_DRAW_HIDDEN)
+        if (wvp->hidden_flags&VP_DRAW_HIDDEN)
         {
             regions = regions->next;
             continue;
@@ -80,11 +82,11 @@ int skin_get_touchaction(struct wps_data *data, int* edge_offset,
         }
         needs_repeat = r->press_length != PRESS;
         /* check if it's inside this viewport */
-        if (viewport_point_within_vp(&(r->wvp->vp), x, y))
+        if (viewport_point_within_vp(&(wvp->vp), x, y))
         {   /* reposition the touch inside the viewport since touchregions
              * are relative to a preceding viewport */
-            vx = x - r->wvp->vp.x;
-            vy = y - r->wvp->vp.y;
+            vx = x - wvp->vp.x;
+            vy = y - wvp->vp.y;
             /* now see if the point is inside this region */
             if (vx >= r->x && vx < r->x+r->width &&
                 vy >= r->y && vy < r->y+r->height)
@@ -214,7 +216,7 @@ int skin_get_touchaction(struct wps_data *data, int* edge_offset,
                 {
                     case F_T_CUSTOM:
                         s->custom_setting
-                            ->load_from_cfg(s->setting, data->value.text);
+                            ->load_from_cfg(s->setting, SKINOFFSETTOPTR(skin_buffer, data->value.text));
                         break;                          
                     case F_T_INT:
                     case F_T_UINT:
