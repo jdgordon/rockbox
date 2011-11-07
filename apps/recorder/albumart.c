@@ -305,7 +305,7 @@ void draw_album_art(struct gui_wps *gwps, int handle_id, bool clear)
         return;
 
     struct wps_data *data = gwps->data;
-    struct skin_albumart *aa = data->albumart;
+    struct skin_albumart *aa = SKINOFFSETTOPTR(skin_buffer, data->albumart);
 
     if (!aa)
         return;

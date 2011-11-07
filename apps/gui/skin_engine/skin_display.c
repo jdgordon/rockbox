@@ -416,11 +416,12 @@ void wps_display_images(struct gui_wps *gwps, struct viewport* vp)
     }
 #ifdef HAVE_ALBUMART
     /* now draw the AA */
-    if (data->albumart && SKINOFFSETTOPTR(skin_buffer, data->albumart->vp) == vp
-        && data->albumart->draw_handle >= 0)
+    struct skin_albumart *aa = SKINOFFSETTOPTR(skin_buffer, data->albumart);
+    if (aa && SKINOFFSETTOPTR(skin_buffer, aa->vp) == vp
+        && aa->draw_handle >= 0)
     {
-        draw_album_art(gwps, data->albumart->draw_handle, false);
-        data->albumart->draw_handle = -1;
+        draw_album_art(gwps, aa->draw_handle, false);
+        aa->draw_handle = -1;
     }
 #endif
 

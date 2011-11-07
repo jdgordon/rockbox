@@ -309,14 +309,11 @@ struct wps_data
     OFFSETTYPE(struct skin_element *) tree;
 #ifdef HAVE_LCD_BITMAP
     struct skin_token_list *images;
-    int *font_ids;
+    OFFSETTYPE(int *) font_ids;
     int font_count;
 #endif
 #if LCD_DEPTH > 1 || defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1
-    struct {
-        char *backdrop;
-        int backdrop_id;
-    };
+    int backdrop_id;
 #endif
 
 #ifdef HAVE_TOUCHSCREEN
@@ -324,7 +321,7 @@ struct wps_data
     bool touchscreen_locked;
 #endif
 #ifdef HAVE_ALBUMART
-    struct skin_albumart *albumart;
+    OFFSETTYPE(struct skin_albumart *) albumart;
     int    playback_aa_slot;
 #endif
 

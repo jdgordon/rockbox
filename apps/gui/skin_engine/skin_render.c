@@ -230,20 +230,23 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
         }
 #ifdef HAVE_ALBUMART
         case SKIN_TOKEN_ALBUMART_DISPLAY:
+        {
+            struct skin_albumart *aa = SKINOFFSETTOPTR(skin_buffer, data->albumart);
             /* now draw the AA */
-            if (do_refresh && data->albumart)
+            if (do_refresh && aa)
             {
                 int handle = playback_current_aa_hid(data->playback_aa_slot);
 #if CONFIG_TUNER
                 if (in_radio_screen() || (get_radio_status() != FMRADIO_OFF))
                 {
-                    struct dim dim = {data->albumart->width, data->albumart->height};
+                    struct dim dim = {aa->width, aa->height};
                     handle = radio_get_art_hid(&dim);
                 }
 #endif
-                data->albumart->draw_handle = handle;
+                aa->draw_handle = handle;
             }
             break;
+        }
 #endif
         case SKIN_TOKEN_DRAW_INBUILTBAR:
             gui_statusbar_draw(&(statusbars.statusbars[gwps->display->screen_type]),

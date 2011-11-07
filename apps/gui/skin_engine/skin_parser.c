@@ -78,6 +78,10 @@
 
 #define GLYPHS_TO_CACHE 256
 
+#if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
+static char *backdrop_filename;
+#endif
+
 static bool isdefault(struct skin_tag_parameter *param)
 {
     return param->type == DEFAULT;
@@ -646,7 +650,7 @@ static int parse_image_special(struct skin_element *element,
             if (!strcmp(filename, "d"))
                 filename = NULL;
         }
-        wps_data->backdrop = filename;
+        backdrop_filename = filename;
     }
 #endif
 
@@ -1020,7 +1024,7 @@ static int parse_albumart_load(struct skin_element* element,
         aa->x = LCD_WIDTH - (aa->x + aa->width);
 
     aa->state = WPS_ALBUMART_LOAD;
-    wps_data->albumart = aa;
+    wps_data->albumart = PTRTOSKINOFFSET(skin_buffer, aa);
 
     dimensions.width = aa->width;
     dimensions.height = aa->height;
@@ -1446,6 +1450,7 @@ void skin_data_free_buflib_allocs(struct wps_data *wps_data)
 #ifdef HAVE_LCD_BITMAP
 #ifndef __PCTOOL__
     struct skin_token_list *list = wps_data->images;
+    int *font_ids = SKINOFFSETTOPTR(skin_buffer, wps_data->font_ids);
     while (list)
     {
         struct gui_img *img = (struct gui_img*)list->token->value.data;
@@ -1454,12 +1459,12 @@ void skin_data_free_buflib_allocs(struct wps_data *wps_data)
         list = list->next;
     }
     wps_data->images = NULL;
-    if (wps_data->font_ids != NULL)
+    if (font_ids != NULL)
     {
         while (wps_data->font_count > 0)
-            font_unload(wps_data->font_ids[--wps_data->font_count]);
+            font_unload(font_ids[--wps_data->font_count]);
     }
-    wps_data->font_ids = NULL;
+    wps_data->font_ids = PTRTOSKINOFFSET(skin_buffer, NULL);
 #endif
 #endif
 }
@@ -1479,7 +1484,7 @@ static void skin_data_reset(struct wps_data *wps_data)
 #if LCD_DEPTH > 1 || defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1
     if (wps_data->backdrop_id >= 0)
         skin_backdrop_unload(wps_data->backdrop_id);
-    wps_data->backdrop = NULL;
+    backdrop_filename = NULL;
 #endif
 #ifdef HAVE_TOUCHSCREEN
     wps_data->touchregions = NULL;
@@ -1488,7 +1493,7 @@ static void skin_data_reset(struct wps_data *wps_data)
     wps_data->skinvars = NULL;
 #endif
 #ifdef HAVE_ALBUMART
-    wps_data->albumart = NULL;
+    wps_data->albumart = PTRTOSKINOFFSET(skin_buffer, NULL);
     if (wps_data->playback_aa_slot >= 0)
     {
         playback_release_aa_slot(wps_data->playback_aa_slot);
@@ -1627,7 +1632,7 @@ static bool load_skin_bitmaps(struct wps_data *wps_data, char *bmpdir)
     }
 
 #if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
-    wps_data->backdrop_id = skin_backdrop_assign(wps_data->backdrop, bmpdir, curr_screen);
+    wps_data->backdrop_id = skin_backdrop_assign(backdrop_filename, bmpdir, curr_screen);
 #endif /* has backdrop support */
     return retval;
 }
@@ -1701,19 +1706,20 @@ static bool skin_load_fonts(struct wps_data *data)
         /* finally, assign the font_id to the viewport */
         vp->font = font->id;
     }
-    data->font_ids = skin_buffer_alloc(font_count * sizeof(int));
-    if (!success || data->font_ids == NULL)
+    int *font_ids = skin_buffer_alloc(font_count * sizeof(int));
+    if (!success || font_ids == NULL)
     {
         while (font_count > 0)
         {
             if(id_array[--font_count] != -1)
                 font_unload(id_array[font_count]);
         }
-        data->font_ids = NULL;
+        data->font_ids = PTRTOSKINOFFSET(skin_buffer, NULL);
         return false;
     }
-    memcpy(data->font_ids, id_array, sizeof(int)*font_count);
+    memcpy(font_ids, id_array, sizeof(int)*font_count);
     data->font_count = font_count;
+    data->font_ids = PTRTOSKINOFFSET(skin_buffer, font_ids);
     return success;
 }
 
@@ -1966,8 +1972,11 @@ static int skin_element_callback(struct skin_element* element, void* data)
 #endif
 #ifdef HAVE_ALBUMART
                 case SKIN_TOKEN_ALBUMART_DISPLAY:
-                    if (wps_data->albumart)
-                        wps_data->albumart->vp = PTRTOSKINOFFSET(skin_buffer, &curr_vp->vp);
+                    if (SKINOFFSETTOPTR(skin_buffer, wps_data->albumart))
+                    {
+                        struct skin_albumart *aa = SKINOFFSETTOPTR(skin_buffer, wps_data->albumart);
+                        aa->vp = PTRTOSKINOFFSET(skin_buffer, &curr_vp->vp);
+                    }
                     break;
                 case SKIN_TOKEN_ALBUMART_LOAD:
                     function = parse_albumart_load;
@@ -2053,11 +2062,12 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
     struct mp3entry *curtrack;
     long offset;
     struct skin_albumart old_aa = {.state = WPS_ALBUMART_NONE};
-    if (wps_data->albumart)
+    struct skin_albumart *aa = SKINOFFSETTOPTR(skin_buffer, wps_data->albumart);
+    if (aa)
     {
-        old_aa.state = wps_data->albumart->state;
-        old_aa.height = wps_data->albumart->height;
-        old_aa.width = wps_data->albumart->width;
+        old_aa.state = aa->state;
+        old_aa.height = aa->height;
+        old_aa.width = aa->width;
     }
 #endif
 #ifdef HAVE_LCD_BITMAP
@@ -2118,7 +2128,7 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
         wps_buffer = (char*)buf;
     }
 #if LCD_DEPTH > 1 || defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1
-    wps_data->backdrop = "-";
+    backdrop_filename = "-";
     wps_data->backdrop_id = -1;
 #endif
     /* parse the skin source */
@@ -2162,7 +2172,7 @@ bool skin_data_load(enum screen_type screen, struct wps_data *wps_data,
     status = audio_status();
     if (status & AUDIO_STATUS_PLAY)
     {
-        struct skin_albumart *aa = wps_data->albumart;
+        struct skin_albumart *aa = SKINOFFSETTOPTR(skin_buffer, wps_data->albumart);
         if (aa && ((aa->state && !old_aa.state) ||
             (aa->state &&
             (((old_aa.height != aa->height) ||
