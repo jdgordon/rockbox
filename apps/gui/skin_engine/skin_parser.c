@@ -999,7 +999,7 @@ static int parse_albumart_load(struct skin_element* element,
     aa->width = element->params[2].data.number;
     aa->height = element->params[3].data.number;
     
-    aa->vp = &curr_vp->vp;
+    aa->vp = PTRTOSKINOFFSET(skin_buffer, &curr_vp->vp);
     aa->draw_handle = -1;
 
     /* if we got here, we parsed everything ok .. ! */
@@ -1964,7 +1964,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
 #ifdef HAVE_ALBUMART
                 case SKIN_TOKEN_ALBUMART_DISPLAY:
                     if (wps_data->albumart)
-                        wps_data->albumart->vp = &curr_vp->vp;
+                        wps_data->albumart->vp = PTRTOSKINOFFSET(skin_buffer, &curr_vp->vp);
                     break;
                 case SKIN_TOKEN_ALBUMART_LOAD:
                     function = parse_albumart_load;
@@ -2020,7 +2020,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
             struct conditional *conditional = 
                 (struct conditional *)skin_buffer_alloc(sizeof(struct conditional));
             conditional->last_value = -1;
-            conditional->token = element->data;
+            conditional->token = PTRTOSKINOFFSET(skin_buffer, element->data);
             element->data = conditional;
             if (!check_feature_tag(element->tag->type))
             {

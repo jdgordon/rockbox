@@ -416,7 +416,7 @@ void wps_display_images(struct gui_wps *gwps, struct viewport* vp)
     }
 #ifdef HAVE_ALBUMART
     /* now draw the AA */
-    if (data->albumart && data->albumart->vp == vp
+    if (data->albumart && SKINOFFSETTOPTR(skin_buffer, data->albumart->vp) == vp
         && data->albumart->draw_handle >= 0)
     {
         draw_album_art(gwps, data->albumart->draw_handle, false);
@@ -443,8 +443,8 @@ int evaluate_conditional(struct gui_wps *gwps, int offset,
 
     int intval = num_options < 2 ? 2 : num_options;
     /* get_token_value needs to know the number of options in the enum */
-    value = get_token_value(gwps, conditional->token, offset,
-                            result, sizeof(result), &intval);
+    value = get_token_value(gwps, SKINOFFSETTOPTR(skin_buffer, conditional->token),
+                    offset, result, sizeof(result), &intval);
 
     /* intval is now the number of the enum option we want to read,
        starting from 1. If intval is -1, we check if value is empty. */

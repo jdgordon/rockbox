@@ -265,7 +265,7 @@ struct skin_albumart {
     unsigned char yalign; /* WPS_ALBUMART_ALIGN_TOP, _CENTER, _BOTTOM */
     unsigned char state; /* WPS_ALBUMART_NONE, _CHECK, _LOAD */
     
-    struct viewport *vp;
+    OFFSETTYPE(struct viewport *) vp;
     int draw_handle;
 };
 #endif
@@ -282,7 +282,7 @@ struct line_alternator {
 
 struct conditional {
     int last_value;
-    struct wps_token *token;
+    OFFSETTYPE(struct wps_token *) token;
 };
 
 struct logical_if {
