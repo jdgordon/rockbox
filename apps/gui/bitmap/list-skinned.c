@@ -224,9 +224,10 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
             struct skin_token_list *imglist = SKINOFFSETTOPTR(skin_buffer, wps.data->images);
             while (imglist)
             {
-                struct gui_img *img = (struct gui_img *)imglist->token->value.data;
+                struct wps_token *token = SKINOFFSETTOPTR(skin_buffer, imglist->token);
+                struct gui_img *img = (struct gui_img *)token->value.data;
                 img->display = -1;
-                imglist = imglist->next;
+                imglist = SKINOFFSETTOPTR(skin_buffer, imglist->next);
             }
 #endif
             skin_render_viewport(viewport->children[0],

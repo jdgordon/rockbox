@@ -39,11 +39,6 @@ struct wps_token {
     bool next;
 };
 
-struct skin_token_list {
-    struct wps_token *token;
-    struct skin_token_list *next;
-};
-
 char* get_dir(char* buf, int buf_size, const char* path, int level);
 
 #endif

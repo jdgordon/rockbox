@@ -25,6 +25,10 @@
 #ifndef _WPS_ENGINE_INTERNALS_
 #define _WPS_ENGINE_INTERNALS_
 
+#include "skin_tokens.h"
+#include "tag_table.h"
+#include "skin_parser.h"
+
 /* Use this type and macro to convert a pointer from the
  * skin buffer to a useable pointer */
 typedef long skinoffset;
@@ -46,9 +50,6 @@ extern char skin_buffer[];
 #define TIMEOUT_UNIT (HZ/10) /* I.e. 0.1 sec */
 #define DEFAULT_SUBLINE_TIME_MULTIPLIER 20 /* In TIMEOUT_UNIT's */
 
-#include "skin_tokens.h"
-#include "tag_table.h"
-#include "skin_parser.h"
 
 
 /* TODO: sort this mess out */
@@ -62,6 +63,11 @@ extern char skin_buffer[];
 
 
 /* wps_data*/
+
+struct skin_token_list {
+    OFFSETTYPE(struct wps_token *) token;
+    OFFSETTYPE(struct skin_token_list *) next;
+};
 
 #ifdef HAVE_LCD_BITMAP
 struct gui_img {

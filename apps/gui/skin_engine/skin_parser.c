@@ -117,9 +117,9 @@ static void add_to_ll_chain(skinoffset *listoffset, struct skin_token_list *item
     }
     else
     {
-        while (list->next)
-            list = list->next;
-        list->next = item;
+        while (SKINOFFSETTOPTR(skin_buffer, list->next))
+            list = SKINOFFSETTOPTR(skin_buffer, list->next);
+        list->next = PTRTOSKINOFFSET(skin_buffer, item);
     }
 }
 
@@ -163,6 +163,9 @@ void *skin_find_item(const char *label, enum skin_find_what what,
     while (list.linkedlist)
     {
         bool skip = false;
+        struct wps_token *token;
+        if (!isvplist)
+            token = SKINOFFSETTOPTR(skin_buffer, list.linkedlist->token);
         switch (what)
         {
             case SKIN_FIND_UIVP:
@@ -177,19 +180,19 @@ void *skin_find_item(const char *label, enum skin_find_what what,
                 break;
 #ifdef HAVE_LCD_BITMAP
             case SKIN_FIND_IMAGE:
-                ret = list.linkedlist->token->value.data;
+                ret = token->value.data;
                 itemlabel = SKINOFFSETTOPTR(skin_buffer, ((struct gui_img *)ret)->label);
                 break;
 #endif
 #ifdef HAVE_TOUCHSCREEN
             case SKIN_FIND_TOUCHREGION:
-                ret = list.linkedlist->token->value.data;
+                ret = token->value.data;
                 itemlabel = SKINOFFSETTOPTR(skin_buffer, ((struct touchregion *)ret)->label);
                 break;
 #endif
 #ifdef HAVE_SKIN_VARIABLES
             case SKIN_VARIABLE:
-                ret = list.linkedlist->token->value.data;
+                ret = token->value.data;
                 itemlabel = SKINOFFSETTOPTR(skin_buffer, ((struct skin_var *)ret)->label);
                 break;
 #endif
@@ -201,7 +204,7 @@ void *skin_find_item(const char *label, enum skin_find_what what,
         if (isvplist)
             list.vplist = list.vplist->next;
         else
-            list.linkedlist = list.linkedlist->next;
+            list.linkedlist = SKINOFFSETTOPTR(skin_buffer, list.linkedlist->next);
     }
     return NULL;
 }
@@ -222,10 +225,10 @@ static struct skin_token_list *new_skin_token_list_item(struct wps_token *token,
         token = (struct wps_token*)skin_buffer_alloc(sizeof(struct wps_token));
     if (!llitem || !token)
         return NULL;
-    llitem->next = NULL;
-    llitem->token = token;
+    llitem->next = PTRTOSKINOFFSET(skin_buffer, NULL);
+    llitem->token = PTRTOSKINOFFSET(skin_buffer, token);
     if (token_data)
-        llitem->token->value.data = token_data;
+        token->value.data = token_data;
     return llitem;
 }
 
@@ -1458,10 +1461,11 @@ void skin_data_free_buflib_allocs(struct wps_data *wps_data)
     int *font_ids = SKINOFFSETTOPTR(skin_buffer, wps_data->font_ids);
     while (list)
     {
-        struct gui_img *img = (struct gui_img*)list->token->value.data;
+        struct wps_token *token = SKINOFFSETTOPTR(skin_buffer, list->token);
+        struct gui_img *img = (struct gui_img*)token->value.data;
         if (img->buflib_handle > 0)
             core_free(img->buflib_handle);
-        list = list->next;
+        list = SKINOFFSETTOPTR(skin_buffer, list->next);
     }
     wps_data->images = PTRTOSKINOFFSET(skin_buffer, NULL);
     if (font_ids != NULL)
@@ -1615,13 +1619,14 @@ static bool load_skin_bitmaps(struct wps_data *wps_data, char *bmpdir)
     list = SKINOFFSETTOPTR(skin_buffer, wps_data->images);
     while (list)
     {
-        struct gui_img *img = (struct gui_img*)list->token->value.data;
+        struct wps_token *token = SKINOFFSETTOPTR(skin_buffer, list->token);
+        struct gui_img *img = (struct gui_img*)token->value.data;
         if (img->bm.data)
         {
             if (img->using_preloaded_icons)
             {
                 img->loaded = true;
-                list->token->type = SKIN_TOKEN_IMAGE_DISPLAY_LISTICON;
+                token->type = SKIN_TOKEN_IMAGE_DISPLAY_LISTICON;
             }
             else
             {
@@ -1633,7 +1638,7 @@ static bool load_skin_bitmaps(struct wps_data *wps_data, char *bmpdir)
                     retval = false;
             }
         }
-        list = list->next;
+        list = SKINOFFSETTOPTR(skin_buffer, list->next);
     }
 
 #if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))

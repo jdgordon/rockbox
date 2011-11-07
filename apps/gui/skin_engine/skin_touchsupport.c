@@ -40,8 +40,9 @@ void skin_disarm_touchregions(struct wps_data *data)
     struct skin_token_list *regions = SKINOFFSETTOPTR(skin_buffer, data->touchregions);
     while (regions)
     {
-        ((struct touchregion *)regions->token->value.data)->armed = false;
-        regions = regions->next;
+        struct wps_token *token = SKINOFFSETTOPTR(skin_buffer, regions->token);
+        ((struct touchregion *)token->value.data)->armed = false;
+        regions = SKINOFFSETTOPTR(skin_buffer, regions->next);
     }
 }
 
@@ -66,18 +67,19 @@ int skin_get_touchaction(struct wps_data *data, int* edge_offset,
 
     while (regions)
     {
-        r = (struct touchregion *)regions->token->value.data;
+        struct wps_token *token = SKINOFFSETTOPTR(skin_buffer, regions->token);
+        r = (struct touchregion *)token->value.data;
         wvp = SKINOFFSETTOPTR(skin_buffer, r->wvp);
         /* make sure this region's viewport is visible */
         if (wvp->hidden_flags&VP_DRAW_HIDDEN)
         {
-            regions = regions->next;
+            regions = SKINOFFSETTOPTR(skin_buffer, regions->next);
             continue;
         }
         if (data->touchscreen_locked && 
             (r->action != ACTION_TOUCH_SOFTLOCK && !r->allow_while_locked))
         {
-            regions = regions->next;
+            regions = SKINOFFSETTOPTR(skin_buffer, regions->next);
             continue;
         }
         needs_repeat = r->press_length != PRESS;
@@ -129,7 +131,7 @@ int skin_get_touchaction(struct wps_data *data, int* edge_offset,
                 }
             }
         }
-        regions = regions->next;
+        regions = SKINOFFSETTOPTR(skin_buffer, regions->next);
     }
 
     /* On release, all regions are disarmed. */

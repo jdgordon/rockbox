@@ -396,7 +396,8 @@ void wps_display_images(struct gui_wps *gwps, struct viewport* vp)
 
     while (list)
     {
-        struct gui_img *img = (struct gui_img*)list->token->value.data;
+        struct wps_token *token = SKINOFFSETTOPTR(skin_buffer, list->token);
+        struct gui_img *img = (struct gui_img*)token->value.data;
         if (img->using_preloaded_icons && img->display >= 0)
         {
             screen_put_icon(display, img->x, img->y, img->display);
@@ -412,7 +413,7 @@ void wps_display_images(struct gui_wps *gwps, struct viewport* vp)
                 wps_draw_image(gwps, img, 0);
             }
         }
-        list = list->next;
+        list = SKINOFFSETTOPTR(skin_buffer, list->next);
     }
 #ifdef HAVE_ALBUMART
     /* now draw the AA */
