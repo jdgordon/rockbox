@@ -732,9 +732,9 @@ static const char* NOINLINE get_lif_token_value(struct gui_wps *gwps,
 {
     int a = lif->num_options;
     int b;
-    const char* out_text = get_token_value(gwps, lif->token, offset,
-                                           buf, buf_size, &a);            
-    if (a == -1 && lif->token->type != SKIN_TOKEN_VOLUME)
+    struct wps_token *liftoken = SKINOFFSETTOPTR(skin_buffer, lif->token);
+    const char* out_text = get_token_value(gwps, liftoken, offset, buf, buf_size, &a);            
+    if (a == -1 && liftoken->type != SKIN_TOKEN_VOLUME)
         a = (out_text && *out_text) ? 1 : 0;
     switch (lif->operand.type)
     {
@@ -756,7 +756,7 @@ static const char* NOINLINE get_lif_token_value(struct gui_wps *gwps,
             b = lif->num_options;
             outb = get_token_value(gwps, token, offset, temp_buf,
                                    sizeof(temp_buf), &b);            
-            if (b == -1 && lif->token->type != SKIN_TOKEN_VOLUME)
+            if (b == -1 && liftoken->type != SKIN_TOKEN_VOLUME)
             {
                 if (!out_text || !outb)
                     return (lif->op == IF_EQUALS) ? NULL : "neq";

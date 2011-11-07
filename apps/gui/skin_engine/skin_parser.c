@@ -708,7 +708,7 @@ static int parse_logical_if(struct skin_element *element,
     if (!lif)
         return -1;
     token->value.data = PTRTOSKINOFFSET(skin_buffer, lif);
-    lif->token = element->params[0].data.code->data;
+    lif->token = PTRTOSKINOFFSET(skin_buffer, element->params[0].data.code->data);
     
     if (!strncmp(op, "=", 1))
         lif->op = IF_EQUALS;

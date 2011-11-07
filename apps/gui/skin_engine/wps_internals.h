@@ -280,7 +280,7 @@ struct conditional {
 };
 
 struct logical_if {
-    struct wps_token *token;
+    OFFSETTYPE(struct wps_token *) token;
     enum {
         IF_EQUALS, /* == */
         IF_NOTEQUALS, /* != */
