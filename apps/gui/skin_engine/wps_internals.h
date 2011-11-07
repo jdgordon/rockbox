@@ -57,28 +57,9 @@ extern char skin_buffer[];
 #include "statusbar.h"
 #include "metadata.h"
 
-/* alignments */
-#define WPS_ALIGN_RIGHT 32
-#define WPS_ALIGN_CENTER 64
-#define WPS_ALIGN_LEFT 128
-
 
 #define TOKEN_VALUE_ONLY 0x0DEADC0D
 
-#ifdef HAVE_ALBUMART
-
-/* albumart definitions */
-#define WPS_ALBUMART_NONE           0      /* WPS does not contain AA tag */
-#define WPS_ALBUMART_CHECK          1      /* WPS contains AA conditional tag */
-#define WPS_ALBUMART_LOAD           2      /* WPS contains AA tag */
-
-#define WPS_ALBUMART_ALIGN_RIGHT    1    /* x align:   right */
-#define WPS_ALBUMART_ALIGN_CENTER   2    /* x/y align: center */
-#define WPS_ALBUMART_ALIGN_LEFT     4    /* x align:   left */
-#define WPS_ALBUMART_ALIGN_TOP      1    /* y align:   top */
-#define WPS_ALBUMART_ALIGN_BOTTOM   4    /* y align:   bottom */
-
-#endif /* HAVE_ALBUMART */
 
 /* wps_data*/
 
@@ -138,34 +119,10 @@ struct align_pos {
 };
 
 #ifdef HAVE_LCD_BITMAP
-
-#define MAX_IMAGES (26*2) /* a-z and A-Z */
-#define MAX_PROGRESSBARS 3
-
-/* The image buffer is big enough to store one full-screen native bitmap,
-   plus two full-screen mono bitmaps. */
-
-#define WPS_MAX_VIEWPORTS   24
-#define WPS_MAX_LINES       ((LCD_HEIGHT/5+1) * 2)
-#define WPS_MAX_SUBLINES    (WPS_MAX_LINES*3)
 #define WPS_MAX_TOKENS      1150
-#define WPS_MAX_STRINGS     128
-#define STRING_BUFFER_SIZE  1024
-#define WPS_MAX_COND_LEVEL  10
-
 #else
-
-#define WPS_MAX_VIEWPORTS   2
-#define WPS_MAX_LINES       2
-#define WPS_MAX_SUBLINES    12
 #define WPS_MAX_TOKENS      64
-#define WPS_MAX_STRINGS     32
-#define STRING_BUFFER_SIZE  64
-#define WPS_MAX_COND_LEVEL  5
-
 #endif
-
-#define SUBLINE_RESET -1
 
 enum wps_parse_error {
     PARSE_OK,
@@ -258,6 +215,18 @@ struct playlistviewer {
 
 
 #ifdef HAVE_ALBUMART
+
+/* albumart definitions */
+#define WPS_ALBUMART_NONE           0      /* WPS does not contain AA tag */
+#define WPS_ALBUMART_CHECK          1      /* WPS contains AA conditional tag */
+#define WPS_ALBUMART_LOAD           2      /* WPS contains AA tag */
+
+#define WPS_ALBUMART_ALIGN_RIGHT    1    /* x align:   right */
+#define WPS_ALBUMART_ALIGN_CENTER   2    /* x/y align: center */
+#define WPS_ALBUMART_ALIGN_LEFT     4    /* x align:   left */
+#define WPS_ALBUMART_ALIGN_TOP      1    /* y align:   top */
+#define WPS_ALBUMART_ALIGN_BOTTOM   4    /* y align:   bottom */
+
 struct skin_albumart {
     /* Album art support */
     int x;
