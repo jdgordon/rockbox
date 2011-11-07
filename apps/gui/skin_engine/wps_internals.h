@@ -308,7 +308,7 @@ struct wps_data
 {
     OFFSETTYPE(struct skin_element *) tree;
 #ifdef HAVE_LCD_BITMAP
-    struct skin_token_list *images;
+    OFFSETTYPE(struct skin_token_list *) images;
     OFFSETTYPE(int *) font_ids;
     int font_count;
 #endif

@@ -107,16 +107,19 @@ typedef int (*parse_function)(struct skin_element *element,
 /* add a skin_token_list item to the list chain. ALWAYS appended because some of the
  * chains require the order to be kept.
  */
-static void add_to_ll_chain(struct skin_token_list **list, struct skin_token_list *item)
+static void add_to_ll_chain(skinoffset *listoffset, struct skin_token_list *item)
 {
-    if (*list == NULL)
-        *list = item;
+    struct skin_token_list *list = SKINOFFSETTOPTR(skin_buffer, *listoffset);
+    if (list == NULL)
+    {
+        list = item;
+        *listoffset = PTRTOSKINOFFSET(skin_buffer, list);
+    }
     else
     {
-        struct skin_token_list *t = *list;
-        while (t->next)
-            t = t->next;
-        t->next = item;
+        while (list->next)
+            list = list->next;
+        list->next = item;
     }
 }
 
@@ -142,7 +145,7 @@ void *skin_find_item(const char *label, enum skin_find_what what,
         break;
 #ifdef HAVE_LCD_BITMAP
         case SKIN_FIND_IMAGE:
-            list.linkedlist = data->images;
+            list.linkedlist = SKINOFFSETTOPTR(skin_buffer, data->images);
         break;
 #endif
 #ifdef HAVE_TOUCHSCREEN
@@ -1449,7 +1452,7 @@ void skin_data_free_buflib_allocs(struct wps_data *wps_data)
     (void)wps_data;
 #ifdef HAVE_LCD_BITMAP
 #ifndef __PCTOOL__
-    struct skin_token_list *list = wps_data->images;
+    struct skin_token_list *list = SKINOFFSETTOPTR(skin_buffer, wps_data->images);
     int *font_ids = SKINOFFSETTOPTR(skin_buffer, wps_data->font_ids);
     while (list)
     {
@@ -1458,7 +1461,7 @@ void skin_data_free_buflib_allocs(struct wps_data *wps_data)
             core_free(img->buflib_handle);
         list = list->next;
     }
-    wps_data->images = NULL;
+    wps_data->images = PTRTOSKINOFFSET(skin_buffer, NULL);
     if (font_ids != NULL)
     {
         while (wps_data->font_count > 0)
@@ -1478,7 +1481,7 @@ static void skin_data_reset(struct wps_data *wps_data)
 {
     skin_data_free_buflib_allocs(wps_data);
 #ifdef HAVE_LCD_BITMAP
-    wps_data->images = NULL;
+    wps_data->images = PTRTOSKINOFFSET(skin_buffer, NULL);
 #endif
     wps_data->tree = PTRTOSKINOFFSET(skin_buffer, NULL);
 #if LCD_DEPTH > 1 || defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1
@@ -1607,7 +1610,7 @@ static bool load_skin_bitmaps(struct wps_data *wps_data, char *bmpdir)
     bool retval = true; /* return false if a single image failed to load */
     
     /* regular images */
-    list = wps_data->images;
+    list = SKINOFFSETTOPTR(skin_buffer, wps_data->images);
     while (list)
     {
         struct gui_img *img = (struct gui_img*)list->token->value.data;

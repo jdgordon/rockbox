@@ -96,7 +96,10 @@ void gui_sync_skin_init(void)
             memset(skins[j][i].gui_wps.data, 0, sizeof(struct wps_data));
             skins[j][i].data.wps_loaded = false;
             skins[j][i].data.tree = PTRTOSKINOFFSET(skin_buffer, NULL);
+#ifdef HAVE_LCD_BITMAP
             skins[j][i].data.font_ids = PTRTOSKINOFFSET(skin_buffer, NULL);
+            skins[j][i].data.images = PTRTOSKINOFFSET(skin_buffer, NULL);
+#endif
 #ifdef HAVE_ALBUMART
             skins[j][i].data.albumart = PTRTOSKINOFFSET(skin_buffer, NULL);
             skins[j][i].data.playback_aa_slot = -1;

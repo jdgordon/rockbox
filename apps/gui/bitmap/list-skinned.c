@@ -221,7 +221,7 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
             display->set_viewport(&skin_viewport->vp);
 #ifdef HAVE_LCD_BITMAP
             /* Set images to not to be displayed */
-            struct skin_token_list *imglist = wps.data->images;
+            struct skin_token_list *imglist = SKINOFFSETTOPTR(skin_buffer, wps.data->images);
             while (imglist)
             {
                 struct gui_img *img = (struct gui_img *)imglist->token->value.data;

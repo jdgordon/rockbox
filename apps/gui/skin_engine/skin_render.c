@@ -661,7 +661,7 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
     bool needs_update;
 #ifdef HAVE_LCD_BITMAP
     /* Set images to not to be displayed */
-    struct skin_token_list *imglist = gwps->data->images;
+    struct skin_token_list *imglist = SKINOFFSETTOPTR(skin_buffer, gwps->data->images);
     while (imglist)
     {
         struct gui_img *img = (struct gui_img *)imglist->token->value.data;

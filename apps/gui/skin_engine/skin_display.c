@@ -392,7 +392,7 @@ void wps_display_images(struct gui_wps *gwps, struct viewport* vp)
 
     struct wps_data *data = gwps->data;
     struct screen *display = gwps->display;
-    struct skin_token_list *list = data->images;
+    struct skin_token_list *list = SKINOFFSETTOPTR(skin_buffer, data->images);
 
     while (list)
     {
