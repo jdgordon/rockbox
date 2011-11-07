@@ -99,14 +99,14 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
 #if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && (LCD_REMOTE_DEPTH > 1))
         case SKIN_TOKEN_VIEWPORT_FGCOLOUR:
         {
-            struct viewport_colour *col = token->value.data;
+            struct viewport_colour *col = SKINOFFSETTOPTR(skin_buffer, token->value.data);
             struct viewport *vp = SKINOFFSETTOPTR(skin_buffer, col->vp);
             vp->fg_pattern = col->colour;
         }
         break;
         case SKIN_TOKEN_VIEWPORT_BGCOLOUR:
         {
-            struct viewport_colour *col = token->value.data;
+            struct viewport_colour *col = SKINOFFSETTOPTR(skin_buffer, token->value.data);
             struct viewport *vp = SKINOFFSETTOPTR(skin_buffer, col->vp);
             vp->bg_pattern = col->colour;
         }
@@ -118,7 +118,7 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
 #ifdef HAVE_LCD_COLOR
         case SKIN_TOKEN_VIEWPORT_GRADIENT_SETUP:
         {
-            struct gradient_config *cfg = token->value.data;
+            struct gradient_config *cfg = SKINOFFSETTOPTR(skin_buffer, token->value.data);
             vp->lss_pattern = cfg->start;
             vp->lse_pattern = cfg->end;
             vp->lst_pattern = cfg->text;
@@ -127,7 +127,7 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
 #endif
         case SKIN_TOKEN_VIEWPORT_ENABLE:
         {
-            char *label = token->value.data;
+            char *label = SKINOFFSETTOPTR(skin_buffer, token->value.data);
             char temp = VP_DRAW_HIDEABLE;
             struct skin_element *viewport = SKINOFFSETTOPTR(skin_buffer, gwps->data->tree);
             while (viewport)
@@ -154,11 +154,11 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
         case SKIN_TOKEN_LIST_ITEM_CFG:
             if (do_refresh)
                 skinlist_set_cfg(gwps->display->screen_type, 
-                                    token->value.data);
+                                    SKINOFFSETTOPTR(skin_buffer, token->value.data));
             break;
         case SKIN_TOKEN_UIVIEWPORT_ENABLE:
             sb_set_info_vp(gwps->display->screen_type, 
-                           token->value.data);
+                           SKINOFFSETTOPTR(skin_buffer, token->value.data));
             break;
         case SKIN_TOKEN_PEAKMETER:
             data->peak_meter_enabled = true;
@@ -179,7 +179,7 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
         case SKIN_TOKEN_TUNER_RSSI_BAR:
         case SKIN_TOKEN_LIST_SCROLLBAR:
         {
-            struct progressbar *bar = (struct progressbar*)token->value.data;
+            struct progressbar *bar = (struct progressbar*)SKINOFFSETTOPTR(skin_buffer, token->value.data);
             if (do_refresh)
                 draw_progressbar(gwps, info->line_number, bar);
         }
@@ -189,7 +189,7 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
         case SKIN_TOKEN_IMAGE_DISPLAY_LISTICON:
         case SKIN_TOKEN_IMAGE_PRELOAD_DISPLAY:
         {
-            struct image_display *id = token->value.data;
+            struct image_display *id = SKINOFFSETTOPTR(skin_buffer, token->value.data);
             const char* label = SKINOFFSETTOPTR(skin_buffer, id->label);
             struct gui_img *img = skin_find_item(label,SKIN_FIND_IMAGE, data);
             if (img && img->loaded)
@@ -251,11 +251,11 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
         case SKIN_TOKEN_DRAW_INBUILTBAR:
             gui_statusbar_draw(&(statusbars.statusbars[gwps->display->screen_type]),
                                info->refresh_type == SKIN_REFRESH_ALL,
-                               token->value.data);
+                               SKINOFFSETTOPTR(skin_buffer, token->value.data));
             break;
         case SKIN_TOKEN_VIEWPORT_CUSTOMLIST:
             if (do_refresh)
-                skin_render_playlistviewer(token->value.data, gwps,
+                skin_render_playlistviewer(SKINOFFSETTOPTR(skin_buffer, token->value.data), gwps,
                                            info->skin_vp, info->refresh_type);
             break;
         
@@ -264,7 +264,7 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
         case SKIN_TOKEN_VAR_SET:
             if (do_refresh)
             {
-                struct skin_var_changer *data = token->value.data;
+                struct skin_var_changer *data = SKINOFFSETTOPTR(skin_buffer, token->value.data);
                 struct skin_var *var = SKINOFFSETTOPTR(skin_buffer, data->var);
                 if (data->direct)
                     var->value = data->newval;
@@ -340,7 +340,7 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
             /* clear all pictures in the conditional and nested ones */
             if (token->type == SKIN_TOKEN_IMAGE_PRELOAD_DISPLAY)
             {
-                struct image_display *id = token->value.data;
+                struct image_display *id = SKINOFFSETTOPTR(skin_buffer, token->value.data);
                 struct gui_img *img = skin_find_item(SKINOFFSETTOPTR(skin_buffer, id->label), 
                                                      SKIN_FIND_IMAGE, data);
                 clear_image_pos(gwps, img);
@@ -351,7 +351,7 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
             }
             else if (token->type == SKIN_TOKEN_VIEWPORT_ENABLE)
             {
-                char *label = token->value.data;
+                char *label = SKINOFFSETTOPTR(skin_buffer, token->value.data);
                 struct skin_element *viewport;
                 for (viewport = SKINOFFSETTOPTR(skin_buffer, data->tree);
                      viewport;
@@ -666,7 +666,7 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
     while (imglist)
     {
         struct wps_token *token = SKINOFFSETTOPTR(skin_buffer, imglist->token);
-        struct gui_img *img = (struct gui_img *)token->value.data;
+        struct gui_img *img = (struct gui_img *)SKINOFFSETTOPTR(skin_buffer, token->value.data);
         img->display = -1;
         imglist = SKINOFFSETTOPTR(skin_buffer, imglist->next);
     }

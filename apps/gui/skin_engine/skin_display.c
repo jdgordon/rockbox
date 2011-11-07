@@ -397,7 +397,7 @@ void wps_display_images(struct gui_wps *gwps, struct viewport* vp)
     while (list)
     {
         struct wps_token *token = SKINOFFSETTOPTR(skin_buffer, list->token);
-        struct gui_img *img = (struct gui_img*)token->value.data;
+        struct gui_img *img = (struct gui_img*)SKINOFFSETTOPTR(skin_buffer, token->value.data);
         if (img->using_preloaded_icons && img->display >= 0)
         {
             screen_put_icon(display, img->x, img->y, img->display);

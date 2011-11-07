@@ -180,19 +180,19 @@ void *skin_find_item(const char *label, enum skin_find_what what,
                 break;
 #ifdef HAVE_LCD_BITMAP
             case SKIN_FIND_IMAGE:
-                ret = token->value.data;
+                ret = SKINOFFSETTOPTR(skin_buffer, token->value.data);
                 itemlabel = SKINOFFSETTOPTR(skin_buffer, ((struct gui_img *)ret)->label);
                 break;
 #endif
 #ifdef HAVE_TOUCHSCREEN
             case SKIN_FIND_TOUCHREGION:
-                ret = token->value.data;
+                ret = SKINOFFSETTOPTR(skin_buffer, token->value.data);
                 itemlabel = SKINOFFSETTOPTR(skin_buffer, ((struct touchregion *)ret)->label);
                 break;
 #endif
 #ifdef HAVE_SKIN_VARIABLES
             case SKIN_VARIABLE:
-                ret = token->value.data;
+                ret = SKINOFFSETTOPTR(skin_buffer, token->value.data);
                 itemlabel = SKINOFFSETTOPTR(skin_buffer, ((struct skin_var *)ret)->label);
                 break;
 #endif
@@ -228,7 +228,7 @@ static struct skin_token_list *new_skin_token_list_item(struct wps_token *token,
     llitem->next = PTRTOSKINOFFSET(skin_buffer, NULL);
     llitem->token = PTRTOSKINOFFSET(skin_buffer, token);
     if (token_data)
-        token->value.data = token_data;
+        token->value.data = PTRTOSKINOFFSET(skin_buffer, token_data);
     return llitem;
 }
 
@@ -239,7 +239,7 @@ static int parse_statusbar_tags(struct skin_element* element,
     (void)element;
     if (token->type == SKIN_TOKEN_DRAW_INBUILTBAR)
     {
-        token->value.data = (void*)&curr_vp->vp;
+        token->value.data = PTRTOSKINOFFSET(skin_buffer, (void*)&curr_vp->vp);
     }
     else
     {
@@ -337,7 +337,7 @@ static int parse_image_display(struct skin_element *element,
             id->subimage = 0;
         }
     }
-    token->value.data = id;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, id);
     return 0;
 }
 
@@ -468,7 +468,7 @@ static int parse_playlistview(struct skin_element *element,
     viewer->start_offset = element->params[0].data.number;
     viewer->line = PTRTOSKINOFFSET(skin_buffer, element->params[1].data.code);
     
-    token->value.data = (void*)viewer;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, (void*)viewer);
     
     return 0;
 }
@@ -498,7 +498,7 @@ static int parse_viewport_gradient_setup(struct skin_element *element,
         cfg->text = curr_vp->vp.fg_pattern;
     }
 
-    token->value.data = cfg;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, cfg);
     return 0; 
 }
 #endif
@@ -511,7 +511,7 @@ static int parse_listitem(struct skin_element *element,
     struct listitem *li = (struct listitem *)skin_buffer_alloc(sizeof(struct listitem));
     if (!li)
         return 1;
-    token->value.data = li;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, li);
     if (element->params_count == 0)
         li->offset = 0;
     else
@@ -547,7 +547,7 @@ static int parse_listitemviewport(struct skin_element *element,
     if (element->params_count > 3 &&
         !strcmp(element->params[3].data.text, "tile"))
         cfg->tile = true;
-    token->value.data = (void*)cfg;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, (void*)cfg);
 #endif
     return 0;
 }
@@ -617,7 +617,7 @@ static int parse_viewportcolour(struct skin_element *element,
             return -1;
     }
     colour->vp = PTRTOSKINOFFSET(skin_buffer, &curr_vp->vp);
-    token->value.data = colour;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, colour);
     if (element->line == curr_viewport_element->line)
     {
         if (token->type == SKIN_TOKEN_VIEWPORT_FGCOLOUR)
@@ -707,7 +707,7 @@ static int parse_logical_if(struct skin_element *element,
     struct logical_if *lif = skin_buffer_alloc(sizeof(struct logical_if));
     if (!lif)
         return -1;
-    token->value.data = lif;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, lif);
     lif->token = element->params[0].data.code->data;
     
     if (!strncmp(op, "=", 1))
@@ -773,7 +773,7 @@ static int parse_substring_tag(struct skin_element* element,
     else
         ss->length = element->params[1].data.number;
     ss->token = PTRTOSKINOFFSET(skin_buffer, element->params[2].data.code->data);
-    token->value.data = ss;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, ss);
     return 0;
 }
 
@@ -793,7 +793,7 @@ static int parse_progressbar_tag(struct skin_element* element,
         return 0; /* nothing to do */
     pb = (struct progressbar*)skin_buffer_alloc(sizeof(struct progressbar));
     
-    token->value.data = pb;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, pb);
     
     if (!pb)
         return WPS_ERROR_INVALID_PARAM;
@@ -1117,7 +1117,7 @@ static int parse_skinvar(  struct skin_element *element,
     switch (token->type)
     {
         case SKIN_TOKEN_VAR_GETVAL:
-            token->value.data = var;
+            token->value.data = PTRTOSKINOFFSET(skin_buffer, var);
             break;
         case SKIN_TOKEN_VAR_SET:
         {
@@ -1142,7 +1142,7 @@ static int parse_skinvar(  struct skin_element *element,
             }
             if (element->params_count > 3)
                 data->max = element->params[3].data.number;
-            token->value.data = data;
+            token->value.data = PTRTOSKINOFFSET(skin_buffer, data);
         }
         break;
         case SKIN_TOKEN_VAR_TIMEOUT:
@@ -1157,7 +1157,7 @@ static int parse_skinvar(  struct skin_element *element,
             if (element->params_count > 1)
                 data->timeout = element->params[1].data.number;
             data->timeout *= TIMEOUT_UNIT;
-            token->value.data = data;
+            token->value.data = PTRTOSKINOFFSET(skin_buffer, data);
         }
         break;
         default: /* kill the warning */
@@ -1193,7 +1193,7 @@ static int parse_lasttouch(struct skin_element *element,
 
     data->region = PTRTOSKINOFFSET(skin_buffer, region);
     data->timeout *= TIMEOUT_UNIT;
-    token->value.data = data;
+    token->value.data = PTRTOSKINOFFSET(skin_buffer, data);
     return 0;
 }
 
@@ -1462,7 +1462,7 @@ void skin_data_free_buflib_allocs(struct wps_data *wps_data)
     while (list)
     {
         struct wps_token *token = SKINOFFSETTOPTR(skin_buffer, list->token);
-        struct gui_img *img = (struct gui_img*)token->value.data;
+        struct gui_img *img = (struct gui_img*)SKINOFFSETTOPTR(skin_buffer, token->value.data);
         if (img->buflib_handle > 0)
             core_free(img->buflib_handle);
         list = SKINOFFSETTOPTR(skin_buffer, list->next);
@@ -1620,7 +1620,7 @@ static bool load_skin_bitmaps(struct wps_data *wps_data, char *bmpdir)
     while (list)
     {
         struct wps_token *token = SKINOFFSETTOPTR(skin_buffer, list->token);
-        struct gui_img *img = (struct gui_img*)token->value.data;
+        struct gui_img *img = (struct gui_img*)SKINOFFSETTOPTR(skin_buffer, token->value.data);
         if (img->bm.data)
         {
             if (img->using_preloaded_icons)
@@ -1959,7 +1959,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
                     break;
                 case SKIN_TOKEN_VIEWPORT_ENABLE:
                 case SKIN_TOKEN_UIVIEWPORT_ENABLE:
-                    token->value.data = element->params[0].data.text;
+                    token->value.data = PTRTOSKINOFFSET(skin_buffer, element->params[0].data.text);
                     break;
                 case SKIN_TOKEN_IMAGE_PRELOAD_DISPLAY:
                     function = parse_image_display;

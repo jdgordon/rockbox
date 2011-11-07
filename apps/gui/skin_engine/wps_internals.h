@@ -25,7 +25,6 @@
 #ifndef _WPS_ENGINE_INTERNALS_
 #define _WPS_ENGINE_INTERNALS_
 
-#include "skin_tokens.h"
 #include "tag_table.h"
 #include "skin_parser.h"
 
@@ -63,6 +62,22 @@ extern char skin_buffer[];
 
 
 /* wps_data*/
+struct wps_token {
+    union {
+        char c;
+        unsigned short i;
+        long l;
+        OFFSETTYPE(void*) data;
+    } value;
+
+    enum skin_token_type type; /* enough to store the token type */
+    /* Whether the tag (e.g. track name or the album) refers the
+       current or the next song (false=current, true=next) */
+    bool next;
+};
+
+char* get_dir(char* buf, int buf_size, const char* path, int level);
+
 
 struct skin_token_list {
     OFFSETTYPE(struct wps_token *) token;

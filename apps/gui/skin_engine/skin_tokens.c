@@ -865,13 +865,13 @@ const char *get_token_value(struct gui_wps *gwps,
     {
         case SKIN_TOKEN_LOGICAL_IF:
         {
-            struct logical_if *lif = token->value.data;
+            struct logical_if *lif = SKINOFFSETTOPTR(skin_buffer, token->value.data);
             return get_lif_token_value(gwps, lif, offset, buf, buf_size);
         }
         break;
         case SKIN_TOKEN_SUBSTRING:
         {
-            struct substring *ss = token->value.data;
+            struct substring *ss = SKINOFFSETTOPTR(skin_buffer, token->value.data);
             const char *token_val = get_token_value(gwps, 
                             SKINOFFSETTOPTR(skin_buffer, ss->token), offset,
                                                     buf, buf_size, intval);
@@ -910,7 +910,7 @@ const char *get_token_value(struct gui_wps *gwps,
             return &(token->value.c);
 
         case SKIN_TOKEN_STRING:
-            return (char*)token->value.data;
+            return (char*)SKINOFFSETTOPTR(skin_buffer, token->value.data);
             
         case SKIN_TOKEN_TRANSLATEDSTRING:
             return (char*)P2STR(ID2P(token->value.i));
@@ -930,7 +930,7 @@ const char *get_token_value(struct gui_wps *gwps,
             return buf;
         case SKIN_TOKEN_LIST_ITEM_TEXT:
         {
-            struct listitem *li = (struct listitem *)token->value.data;
+            struct listitem *li = (struct listitem *)SKINOFFSETTOPTR(skin_buffer, token->value.data);
             return skinlist_get_item_text(li->offset, li->wrap, buf, buf_size);
         }
         case SKIN_TOKEN_LIST_ITEM_NUMBER:
@@ -942,7 +942,7 @@ const char *get_token_value(struct gui_wps *gwps,
             return skinlist_is_selected_item()?"s":"";
         case SKIN_TOKEN_LIST_ITEM_ICON:
         {
-            struct listitem *li = (struct listitem *)token->value.data;
+            struct listitem *li = (struct listitem *)SKINOFFSETTOPTR(skin_buffer, token->value.data);
             int icon = skinlist_get_item_icon(li->offset, li->wrap);
             if (intval)
                 *intval = icon;
@@ -1475,7 +1475,7 @@ const char *get_token_value(struct gui_wps *gwps,
             {
 #ifdef HAVE_TOUCHSCREEN
             unsigned int last_touch = touchscreen_last_touch();
-            struct touchregion_lastpress *data = token->value.data;
+            struct touchregion_lastpress *data = SKINOFFSETTOPTR(skin_buffer, token->value.data);
             struct touchregion *region = SKINOFFSETTOPTR(skin_buffer, data->region);
             if (region)
                 last_touch = region->last_press;
@@ -1808,7 +1808,7 @@ const char *get_token_value(struct gui_wps *gwps,
 #ifdef HAVE_SKIN_VARIABLES
         case SKIN_TOKEN_VAR_GETVAL:
         {
-            struct skin_var* var = token->value.data;
+            struct skin_var* var = SKINOFFSETTOPTR(skin_buffer, token->value.data);
             if (intval)
                 *intval = var->value;
             snprintf(buf, buf_size, "%d", var->value);
@@ -1817,7 +1817,7 @@ const char *get_token_value(struct gui_wps *gwps,
         break;
         case SKIN_TOKEN_VAR_TIMEOUT:
             {
-            struct skin_var_lastchange *data = token->value.data;
+            struct skin_var_lastchange *data = SKINOFFSETTOPTR(skin_buffer, token->value.data);
             struct skin_var* var = SKINOFFSETTOPTR(skin_buffer, data->var);
             unsigned int last_change = var->last_changed;
 
