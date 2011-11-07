@@ -826,7 +826,7 @@ void skin_render_playlistviewer(struct playlistviewer* viewer,
     struct align_pos * align = &info.align;
     bool needs_update;
     int cur_pos, start_item, max;
-    int nb_lines = viewport_get_nb_lines(viewer->vp);
+    int nb_lines = viewport_get_nb_lines(SKINOFFSETTOPTR(skin_buffer, viewer->vp));
 #if CONFIG_TUNER
     if (get_current_activity() == ACTIVITY_FM)
     {
@@ -848,7 +848,7 @@ void skin_render_playlistviewer(struct playlistviewer* viewer,
     if (max-start_item > nb_lines)
         max = start_item + nb_lines;
     
-    line = viewer->line;
+    line = SKINOFFSETTOPTR(skin_buffer, viewer->line);
     while (start_item < max)
     {
         linebuf[0] = '\0';
