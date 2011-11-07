@@ -150,12 +150,12 @@ void *skin_find_item(const char *label, enum skin_find_what what,
 #endif
 #ifdef HAVE_TOUCHSCREEN
         case SKIN_FIND_TOUCHREGION:
-            list.linkedlist = data->touchregions;
+            list.linkedlist = SKINOFFSETTOPTR(skin_buffer, data->touchregions);
         break;
 #endif
 #ifdef HAVE_SKIN_VARIABLES
         case SKIN_VARIABLE:
-            list.linkedlist = data->skinvars;
+            list.linkedlist = SKINOFFSETTOPTR(skin_buffer, data->skinvars);
         break;
 #endif
     }
@@ -190,7 +190,7 @@ void *skin_find_item(const char *label, enum skin_find_what what,
 #ifdef HAVE_SKIN_VARIABLES
             case SKIN_VARIABLE:
                 ret = list.linkedlist->token->value.data;
-                itemlabel = ((struct skin_var *)ret)->label;
+                itemlabel = SKINOFFSETTOPTR(skin_buffer, ((struct skin_var *)ret)->label);
                 break;
 #endif
                 
@@ -1093,7 +1093,7 @@ static struct skin_var* find_or_add_var(const char* label,
         ret = (struct skin_var*)skin_buffer_alloc(sizeof(struct skin_var));
         if (!ret)
             return NULL;
-        ret->label = label;
+        ret->label = PTRTOSKINOFFSET(skin_buffer, label);
         ret->value = 1;
         ret->last_changed = 0xffff;
         struct skin_token_list *item = new_skin_token_list_item(NULL, ret);
@@ -1123,7 +1123,7 @@ static int parse_skinvar(  struct skin_element *element,
                                             sizeof(struct skin_var_changer));
             if (!data)
                 return WPS_ERROR_INVALID_PARAM;
-            data->var = var;
+            data->var = PTRTOSKINOFFSET(skin_buffer, var);
             data->newval = element->params[2].data.number;
             data->max = 0;
             if (!strcmp(element->params[1].data.text, "set"))
@@ -1149,7 +1149,7 @@ static int parse_skinvar(  struct skin_element *element,
                                             sizeof(struct skin_var_lastchange));
             if (!data)
                 return WPS_ERROR_INVALID_PARAM;
-            data->var = var;
+            data->var = PTRTOSKINOFFSET(skin_buffer, var);
             data->timeout = 10;
             if (element->params_count > 1)
                 data->timeout = element->params[1].data.number;
@@ -1490,10 +1490,10 @@ static void skin_data_reset(struct wps_data *wps_data)
     backdrop_filename = NULL;
 #endif
 #ifdef HAVE_TOUCHSCREEN
-    wps_data->touchregions = NULL;
+    wps_data->touchregions = PTRTOSKINOFFSET(skin_buffer, NULL);
 #endif
 #ifdef HAVE_SKIN_VARIABLES
-    wps_data->skinvars = NULL;
+    wps_data->skinvars = PTRTOSKINOFFSET(skin_buffer, NULL);
 #endif
 #ifdef HAVE_ALBUMART
     wps_data->albumart = PTRTOSKINOFFSET(skin_buffer, NULL);

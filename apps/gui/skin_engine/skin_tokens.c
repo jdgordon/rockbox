@@ -1000,12 +1000,12 @@ const char *get_token_value(struct gui_wps *gwps,
         case SKIN_TOKEN_ALBUMART_FOUND:
             if (SKINOFFSETTOPTR(skin_buffer, data->albumart))
             {
-                struct skin_albumart *aa = SKINOFFSETTOPTR(skin_buffer, data->albumart);
                 int handle = -1;
                 handle = playback_current_aa_hid(data->playback_aa_slot);
 #if CONFIG_TUNER
                 if (in_radio_screen() || (get_radio_status() != FMRADIO_OFF))
                 {
+                    struct skin_albumart *aa = SKINOFFSETTOPTR(skin_buffer, data->albumart);
                     struct dim dim = {aa->width, aa->height};
                     handle = radio_get_art_hid(&dim);
                 }
@@ -1817,7 +1817,8 @@ const char *get_token_value(struct gui_wps *gwps,
         case SKIN_TOKEN_VAR_TIMEOUT:
             {
             struct skin_var_lastchange *data = token->value.data;
-            unsigned int last_change = data->var->last_changed;
+            struct skin_var* var = SKINOFFSETTOPTR(skin_buffer, data->var);
+            unsigned int last_change = var->last_changed;
 
             if (last_change != 0xffff &&
                 TIME_BEFORE(current_tick, data->timeout + last_change))

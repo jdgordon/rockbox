@@ -285,16 +285,16 @@ struct listitem {
 
 #ifdef HAVE_SKIN_VARIABLES
 struct skin_var {
-    const char *label;
+    OFFSETTYPE(const char *) label;
     int value;
     long last_changed;
 };
 struct skin_var_lastchange {
-    struct skin_var *var;
+    OFFSETTYPE(struct skin_var *) var;
     long timeout;
 };
 struct skin_var_changer {
-    struct skin_var *var;
+    OFFSETTYPE(struct skin_var *) var;
     int newval;
     bool direct; /* true to make val=newval, false for val += newval */
     int max;
@@ -317,7 +317,7 @@ struct wps_data
 #endif
 
 #ifdef HAVE_TOUCHSCREEN
-    struct skin_token_list *touchregions;
+    OFFSETTYPE(struct skin_token_list *) touchregions;
     bool touchscreen_locked;
 #endif
 #ifdef HAVE_ALBUMART
@@ -326,7 +326,7 @@ struct wps_data
 #endif
 
 #ifdef HAVE_SKIN_VARIABLES
-    struct skin_token_list *skinvars;
+    OFFSETTYPE(struct skin_token_list *) skinvars;
 #endif
 
 #ifdef HAVE_LCD_BITMAP

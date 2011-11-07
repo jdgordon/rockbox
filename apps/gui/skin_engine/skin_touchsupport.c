@@ -37,7 +37,7 @@
 /** Disarms all touchregions. */
 void skin_disarm_touchregions(struct wps_data *data)
 {
-    struct skin_token_list *regions = data->touchregions;
+    struct skin_token_list *regions = SKINOFFSETTOPTR(skin_buffer, data->touchregions);
     while (regions)
     {
         ((struct touchregion *)regions->token->value.data)->armed = false;
@@ -60,7 +60,7 @@ int skin_get_touchaction(struct wps_data *data, int* edge_offset,
     bool repeated = (type == BUTTON_REPEAT);
     bool released = (type == BUTTON_REL);
     bool pressed = (type == BUTTON_TOUCHSCREEN);
-    struct skin_token_list *regions = data->touchregions;
+    struct skin_token_list *regions = SKINOFFSETTOPTR(skin_buffer, data->touchregions);
     bool needs_repeat;
 
     while (regions)
