@@ -131,8 +131,12 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
             while (viewport)
             {
                 struct skin_viewport *skinvp = (struct skin_viewport*)viewport->data;
-                if (skinvp->label && !skinvp->is_infovp &&
-                    !strcmp(skinvp->label, label))
+                
+                char *vplabel = SKINOFFSETTOPTR(skin_buffer, skinvp->label);
+                if (skinvp->label == VP_DEFAULT_LABEL)
+                    vplabel = VP_DEFAULT_LABEL_STRING;
+                if (vplabel && !skinvp->is_infovp &&
+                    !strcmp(vplabel, label))
                 {
                     if (skinvp->hidden_flags&VP_DRAW_HIDDEN)
                     {
@@ -348,7 +352,11 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                      viewport = viewport->next)
                 {
                     struct skin_viewport *skin_viewport = (struct skin_viewport*)viewport->data;
-                    if (skin_viewport->label && strcmp(skin_viewport->label, label))
+                    
+                    char *vplabel = SKINOFFSETTOPTR(skin_buffer, skin_viewport->label);
+                    if (skin_viewport->label == VP_DEFAULT_LABEL)
+                        vplabel = VP_DEFAULT_LABEL_STRING;
+                    if (vplabel && strcmp(vplabel, label))
                         continue;
                     if (skin_viewport->hidden_flags&VP_NEVER_VISIBLE)
                     {
@@ -730,6 +738,7 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
     
     struct skin_element* viewport;
     struct skin_viewport* skin_viewport;
+    char *label;
     
     int old_refresh_mode = refresh_mode;
     
@@ -743,8 +752,11 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
 #endif
     viewport = SKINOFFSETTOPTR(skin_buffer, data->tree);
     skin_viewport = (struct skin_viewport *)viewport->data;
-    if (skin_viewport->label && viewport->next &&
-        !strcmp(skin_viewport->label,VP_DEFAULT_LABEL))
+    label = SKINOFFSETTOPTR(skin_buffer, skin_viewport->label);
+    if (skin_viewport->label == VP_DEFAULT_LABEL)
+        label = VP_DEFAULT_LABEL_STRING;
+    if (label && viewport->next &&
+        !strcmp(label,VP_DEFAULT_LABEL_STRING))
         refresh_mode = 0;
     
     for (viewport = SKINOFFSETTOPTR(skin_buffer, data->tree);

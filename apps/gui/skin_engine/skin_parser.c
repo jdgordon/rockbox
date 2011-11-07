@@ -161,7 +161,10 @@ void *skin_find_item(const char *label, enum skin_find_what what,
             case SKIN_FIND_UIVP:
             case SKIN_FIND_VP:
                 ret = list.vplist->data;
-                itemlabel = ((struct skin_viewport *)ret)->label;
+                if (((struct skin_viewport *)ret)->label == VP_DEFAULT_LABEL)
+                    itemlabel = VP_DEFAULT_LABEL_STRING;
+                else
+                    itemlabel = SKINOFFSETTOPTR(skin_buffer, ((struct skin_viewport *)ret)->label);
                 skip = !(((struct skin_viewport *)ret)->is_infovp == 
                     (what==SKIN_FIND_UIVP));
                 break;
@@ -1725,7 +1728,7 @@ static int convert_viewport(struct wps_data *data, struct skin_element* element)
         return CALLBACK_ERROR;
         
     skin_vp->hidden_flags = 0;
-    skin_vp->label = NULL;
+    skin_vp->label = PTRTOSKINOFFSET(skin_buffer, NULL);
     skin_vp->is_infovp = false;
     skin_vp->parsed_fontid = 1;
     element->data = skin_vp;
@@ -1767,13 +1770,13 @@ static int convert_viewport(struct wps_data *data, struct skin_element* element)
             else
             {
                 skin_vp->hidden_flags = VP_NEVER_VISIBLE;
-                skin_vp->label = param->data.text;
+                skin_vp->label = PTRTOSKINOFFSET(skin_buffer, param->data.text);
             }
         }
         else
         {
                 skin_vp->hidden_flags = VP_DRAW_HIDEABLE|VP_DRAW_HIDDEN;
-                skin_vp->label = param->data.text;
+                skin_vp->label = PTRTOSKINOFFSET(skin_buffer, param->data.text);
         }
         param++;
     }

@@ -87,7 +87,7 @@ int sb_postproccess(enum screen_type screen, struct wps_data *data)
         /* hide the sb's default viewport because it has nasty effect with stuff
         * not part of the statusbar,
         * hence .sbs's without any other vps are unsupported*/
-        struct skin_viewport *vp = skin_find_item(VP_DEFAULT_LABEL, SKIN_FIND_VP, data);
+        struct skin_viewport *vp = skin_find_item(VP_DEFAULT_LABEL_STRING, SKIN_FIND_VP, data);
         struct skin_element *tree = SKINOFFSETTOPTR(skin_buffer, data->tree);
         struct skin_element *next_vp = tree->next;
         
@@ -100,7 +100,7 @@ int sb_postproccess(enum screen_type screen, struct wps_data *data)
             /* hide this viewport, forever */
             vp->hidden_flags = VP_NEVER_VISIBLE;
         }
-        sb_set_info_vp(screen, VP_DEFAULT_LABEL);
+        sb_set_info_vp(screen, VP_DEFAULT_LABEL_STRING);
     }
     viewportmanager_theme_undo(screen, false);
     return 1;

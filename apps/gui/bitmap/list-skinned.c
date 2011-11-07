@@ -188,9 +188,10 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
         {
             int origional_x, origional_y;
             int origional_w, origional_h;
+            char *viewport_label = SKINOFFSETTOPTR(skin_buffer, skin_viewport->label);
             skin_viewport = (struct skin_viewport*)viewport->data;
-            if (viewport->children == 0 || !skin_viewport->label ||
-                (skin_viewport->label && strcmp(label, skin_viewport->label))
+            if (viewport->children == 0 || !viewport_label ||
+                (skin_viewport->label && strcmp(label, viewport_label))
                 )
                 continue;
             if (is_selected)

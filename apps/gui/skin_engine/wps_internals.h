@@ -189,12 +189,13 @@ struct gradient_config {
 #define VP_DRAW_WASHIDDEN   0x4
 /* these are never drawn, nor cleared, i.e. just ignored */
 #define VP_NEVER_VISIBLE    0x8
-#define VP_DEFAULT_LABEL    "|"
+#define VP_DEFAULT_LABEL    -200
+#define VP_DEFAULT_LABEL_STRING "|"
 struct skin_viewport {
     struct viewport vp;   /* The LCD viewport struct */
     char hidden_flags;
     bool is_infovp;
-    char* label;
+    OFFSETTYPE(char*) label;
     int   parsed_fontid;
 #if LCD_DEPTH > 1
     unsigned start_fgcolour;
