@@ -100,13 +100,15 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
         case SKIN_TOKEN_VIEWPORT_FGCOLOUR:
         {
             struct viewport_colour *col = token->value.data;
-            col->vp->fg_pattern = col->colour;
+            struct viewport *vp = SKINOFFSETTOPTR(skin_buffer, col->vp);
+            vp->fg_pattern = col->colour;
         }
         break;
         case SKIN_TOKEN_VIEWPORT_BGCOLOUR:
         {
             struct viewport_colour *col = token->value.data;
-            col->vp->bg_pattern = col->colour;
+            struct viewport *vp = SKINOFFSETTOPTR(skin_buffer, col->vp);
+            vp->bg_pattern = col->colour;
         }
         break;
         case SKIN_TOKEN_VIEWPORT_TEXTSTYLE:

@@ -606,7 +606,7 @@ static int parse_viewportcolour(struct skin_element *element,
         if (!parse_color(curr_screen, param->data.text, &colour->colour))
             return -1;
     }
-    colour->vp = &curr_vp->vp;
+    colour->vp = PTRTOSKINOFFSET(skin_buffer, &curr_vp->vp);
     token->value.data = colour;
     if (element->line == curr_viewport_element->line)
     {
