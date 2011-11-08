@@ -7,7 +7,7 @@
  *                     \/            \/     \/    \/            \/
  * $Id$
  *
- * Copyright (C) 2010 Amaury Pouly
+ * Copyright (C) 2011 Andrew Ryabinin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,34 +18,30 @@
  * KIND, either express or implied.
  *
  ****************************************************************************/
-#ifndef __MISC_H__
-#define __MISC_H__
+#ifndef _BUTTON_TARGET_H_
+#define _BUTTON_TARGET_H_
 
 #include <stdbool.h>
-#include "crypto.h"
+#include "config.h"
 
-#define _STR(a) #a
-#define STR(a) _STR(a)
+void button_init_device(void);
+int button_read_device(void);
 
-#define bug(...) do { fprintf(stderr,"["__FILE__":"STR(__LINE__)"]ERROR: "__VA_ARGS__); exit(1); } while(0)
-#define bugp(a) do { perror("ERROR: "a); exit(1); } while(0)
 
-#define ROUND_UP(val, round) ((((val) + (round) - 1) / (round)) * (round))
+#define BUTTON_UP          0x00000001
+#define BUTTON_DOWN        0x00000004
+#define BUTTON_LEFT        0x00000008
+#define BUTTON_RIGHT       0x00000010
+#define BUTTON_SELECT      0x00000020
+#define BUTTON_NEXT        0x00000040
+#define BUTTON_PREV        0x00000080
+#define BUTTON_PLAY        0x00000100
 
-extern bool g_debug;
 
-typedef struct crypto_key_t *key_array_t;
-int g_nr_keys;
-key_array_t g_key_array;
+#define BUTTON_REMOTE      0
 
-void *augment_array(void *arr, size_t elem_sz, size_t cnt, void *aug, size_t aug_cnt);
-void generate_random_data(void *buf, size_t sz);
-void *xmalloc(size_t s);
-int convxdigit(char digit, byte *val);
-void print_hex(byte *data, int len, bool newline);
-void add_keys(key_array_t ka, int kac);
-bool parse_key(char **str, struct crypto_key_t *key);
-void add_keys_from_file(const char *key_file);
-void print_key(struct crypto_key_t *key, bool newline);
 
-#endif /* __MISC_H__ */
+#define POWEROFF_BUTTON 0x02
+#define POWEROFF_COUNT 30
+
+#endif /* _BUTTON_TARGET_H_ */
