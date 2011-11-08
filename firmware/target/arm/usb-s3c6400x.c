@@ -48,7 +48,11 @@ struct ep_type
 } ;
 
 static struct ep_type endpoints[USB_NUM_ENDPOINTS];
-static struct usb_ctrlrequest ctrlreq USB_DEVBSS_ATTR;
+static union
+{
+    unsigned char data[64];
+    struct usb_ctrlrequest req;
+} ctrlreq USB_DEVBSS_ATTR;
 
 int usb_drv_port_speed(void)
 {
@@ -70,7 +74,7 @@ static void reset_endpoints(int reinit)
     DOEPCTL0 = 0x8000;  /* EP0 OUT ACTIVE */
     DOEPTSIZ0 = 0x20080040;  /* EP0 OUT Transfer Size:
                                 64 Bytes, 1 Packet, 1 Setup Packet */
-    DOEPDMA0 = &ctrlreq;
+    DOEPDMA0 = &ctrlreq.data;
     DOEPCTL0 |= 0x84000000;  /* EP0 OUT ENABLE CLEARNAK */
     if (reinit)
     {
@@ -132,18 +136,18 @@ void usb_drv_release_endpoint(int ep)
 
 static void usb_reset(void)
 {
-    volatile int i;
-
     DCTL = 0x802;  /* Soft Disconnect */
 
     OPHYPWR = 0;  /* PHY: Power up */
+    udelay(10);
     OPHYUNK1 = 1;
     OPHYUNK2 = 0xE3F;
-    OPHYCLK = SYNOPSYSOTG_CLOCK;
     ORSTCON = 1;  /* PHY: Assert Software Reset */
-    for (i = 0; i < 50; i++);
+    udelay(10);
     ORSTCON = 0;  /* PHY: Deassert Software Reset */
     OPHYUNK3 = 0x600;
+    OPHYCLK = SYNOPSYSOTG_CLOCK;
+    udelay(400);
 
     GRSTCTL = 1;  /* OTG: Assert Software Reset */
     while (GRSTCTL & 1);  /* Wait for OTG to ack reset */
@@ -243,14 +247,14 @@ void INT_USB_FUNC(void)
                     invalidate_dcache();
                     if (i == 0)
                     {
-                        if (ctrlreq.bRequest == 5)
+                        if (ctrlreq.req.bRequest == 5)
                         {
                             /* Already set the new address here,
                                before passing the packet to the core.
                                See below (usb_drv_set_address) for details. */
-                            DCFG = (DCFG & ~0x7F0) | (ctrlreq.wValue << 4);
+                            DCFG = (DCFG & ~0x7F0) | (ctrlreq.req.wValue << 4);
                         }
-                        usb_core_control_request(&ctrlreq);
+                        usb_core_control_request(&ctrlreq.req);
                     }
                     else panicf("USB: SETUP done on OUT EP%d!?", i);
                 }
@@ -258,7 +262,7 @@ void INT_USB_FUNC(void)
                 if (!i)
                 {
                     DOEPTSIZ0 = 0x20080040;
-                    DOEPDMA0 = &ctrlreq;
+                    DOEPDMA0 = &ctrlreq.data;
                     DOEPCTL0 |= 0x84000000;
                 }
                 DOEPINT(i) = epints;
@@ -395,9 +399,11 @@ void usb_drv_exit(void)
 {
     DCTL = 0x802;  /* Soft Disconnect */
 
-    ORSTCON = 1;  /* Put the PHY into reset (needed to get current down) */
-    PCGCCTL = 1;  /* Shut down PHY clock */
     OPHYPWR = 0xF;  /* PHY: Power down */
+    udelay(10);
+    ORSTCON = 7;  /* Put the PHY into reset (needed to get current down) */
+    udelay(10);
+    PCGCCTL = 1;  /* Shut down PHY clock */
     
 #if CONFIG_CPU==S5L8701
     PWRCON |= 0x4000;
