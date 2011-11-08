@@ -108,7 +108,7 @@ struct skin_element
     /* Link to the next element */
     struct skin_element* next;
     /* Pointer to an array of children */
-    struct skin_element** children;
+    OFFSETTYPE(struct skin_element**) children;
     /* Placeholder for element data
      * TEXT and COMMENT uses it for the text string
      * TAG, VIEWPORT, LINE, etc may use it for post parse extra storage

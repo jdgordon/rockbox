@@ -133,6 +133,7 @@ static struct skin_element* skin_parse_viewport(const char** document)
     viewport_line = skin_line;
 
     struct skin_element** to_write = 0;
+    struct skin_element** children;
 
     const char* cursor = *document; /* Keeps track of location in the document */
     const char* bookmark; /* Used when we need to look ahead */
@@ -165,8 +166,8 @@ static struct skin_element* skin_parse_viewport(const char** document)
         return retval;
     }
     retval->children_count = 1;
-    retval->children = skin_alloc_children(1);
-    if (!retval->children)
+    children = skin_alloc_children(1);
+    if (!children)
         return NULL;
     do
     {
@@ -269,7 +270,8 @@ static struct skin_element* skin_parse_viewport(const char** document)
 
     *document = cursor;
 
-    retval->children[0] = root;
+    children[0] = root;
+    retval->children = skin_buffer_to_offset(children);
     return retval;
 }
 
@@ -293,6 +295,7 @@ static struct skin_element* skin_parse_line_optional(const char** document,
     struct skin_element* root = NULL;
     struct skin_element* current = NULL;
     struct skin_element* retval = NULL;
+    struct skin_element** children;
 
     /* A wrapper for the line */
     retval = skin_alloc_element();
@@ -315,8 +318,8 @@ static struct skin_element* skin_parse_line_optional(const char** document,
 
     if(retval->children_count > 0)
     {
-        retval->children = skin_alloc_children(1);
-        if (!retval->children)
+        children = skin_alloc_children(1);
+        if (!children)
             return NULL;
     }
 
@@ -384,7 +387,10 @@ static struct skin_element* skin_parse_line_optional(const char** document,
     *document = cursor;
     
     if(root)
-        retval->children[0] = root;
+    {
+        children[0] = root;
+        retval->children = skin_buffer_to_offset(children);
+    }
     return retval;
 }
 
@@ -397,6 +403,7 @@ static struct skin_element* skin_parse_sublines_optional(const char** document,
                                                   int conditional)
 {
     struct skin_element* retval;
+    struct skin_element** children;
     const char* cursor = *document;
     int sublines = 1;
     int i;
@@ -449,14 +456,14 @@ static struct skin_element* skin_parse_sublines_optional(const char** document,
 
     /* ...and then we parse them */
     retval->children_count = sublines;
-    retval->children = skin_alloc_children(sublines);
-    if (!retval->children)
+    children = skin_alloc_children(sublines);
+    if (!children)
         return NULL;
 
     cursor = *document;
     for(i = 0; i < sublines; i++)
     {
-        retval->children[i] = skin_parse_line_optional(&cursor, conditional);
+        children[i] = skin_parse_line_optional(&cursor, conditional);
         skip_whitespace(&cursor);
 
         if(*cursor != MULTILINESYM && i != sublines - 1)
@@ -478,6 +485,7 @@ static struct skin_element* skin_parse_sublines_optional(const char** document,
     }
 #endif
     *document = cursor;
+    retval->children = skin_buffer_to_offset(children);
 
     return retval;
 }
@@ -897,6 +905,7 @@ static int skin_parse_conditional(struct skin_element* element, const char** doc
     const char *false_branch = NULL;
     const char *conditional_end = NULL;
 #endif
+    struct skin_element **children_array = NULL;
 
     /* Some conditional tags allow for target feature checking,
      * so to handle that call the callback as usual with type == TAG
@@ -995,23 +1004,23 @@ static int skin_parse_conditional(struct skin_element* element, const char** doc
     {
         const char* emptyline= "";
         children = 1;
-        element->children = skin_alloc_children(children);
-        if (!element->children)
+        children_array = skin_alloc_children(children);
+        if (!children_array)
             return 0;
         element->children_count = children;
-        element->children[0] = skin_parse_code_as_arg(&emptyline);
+        children_array[0] = skin_parse_code_as_arg(&emptyline);
     }
     else
     {    
-        element->children = skin_alloc_children(children);
-        if (!element->children)
+        children_array = skin_alloc_children(children);
+        if (!children_array)
             return 0;
         element->children_count = children;
 
         for(i = 0; i < children; i++)
         {
-            element->children[i] = skin_parse_code_as_arg(&cursor);
-            if (element->children[i] == NULL)
+            children_array[i] = skin_parse_code_as_arg(&cursor);
+            if (children_array[i] == NULL)
                 return 0;
             skip_whitespace(&cursor);
 #ifdef ROCKBOX
@@ -1036,6 +1045,7 @@ static int skin_parse_conditional(struct skin_element* element, const char** doc
         }
     }
     *document = cursor;
+    element->children = skin_buffer_to_offset(children_array);
 
     return 1;
 }

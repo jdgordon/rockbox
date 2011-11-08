@@ -230,7 +230,8 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
                 imglist = SKINOFFSETTOPTR(skin_buffer, imglist->next);
             }
 #endif
-            skin_render_viewport(viewport->children[0],
+            struct skin_element** children = SKINOFFSETTOPTR(skin_buffer, viewport->children);
+            skin_render_viewport(children[0],
                                  &wps, skin_viewport, SKIN_REFRESH_ALL);
 #ifdef HAVE_LCD_BITMAP
             wps_display_images(&wps, &skin_viewport->vp);

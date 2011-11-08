@@ -81,6 +81,14 @@ static void skin_render_playlistviewer(struct playlistviewer* viewer,
                                        unsigned long refresh_type);
 #endif
 
+static inline struct skin_element*
+get_child(OFFSETTYPE(struct skin_element**) children, int child)
+{
+    struct skin_element **kids = SKINOFFSETTOPTR(skin_buffer, children);
+    return kids[child];
+}
+
+
 static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                              struct skin_element *element, struct viewport* vp)
 {
@@ -307,12 +315,12 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
         int i;
         for (i=0; i<branch->children_count; i++)
         {
-            do_tags_in_hidden_conditional(branch->children[i], info);
+            do_tags_in_hidden_conditional(get_child(branch->children, i), info);
         }
     }
     else if (branch->type == LINE && branch->children_count)
     {
-        struct skin_element *child = branch->children[0];
+        struct skin_element *child = get_child(branch->children, 0);
 #if defined(HAVE_LCD_BITMAP) || defined(HAVE_ALBUMART)
         struct wps_token *token;
 #endif
@@ -323,7 +331,7 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                 int i;
                 for (i=0; i<child->children_count; i++)
                 {
-                    do_tags_in_hidden_conditional(child->children[i], info);
+                    do_tags_in_hidden_conditional(get_child(branch->children, i), info);
                 }
                 child = child->next;
                 continue;
@@ -447,7 +455,7 @@ static bool skin_render_line(struct skin_element* line, struct skin_draw_info *i
     if (line->children_count == 0)
         return false; /* empty line, do nothing */
         
-    struct skin_element *child = line->children[0];
+    struct skin_element *child = get_child(line->children, 0);
     struct conditional *conditional;
     skin_render_func func = skin_render_line;
     int old_refresh_mode = info->refresh_type;
@@ -470,20 +478,20 @@ static bool skin_render_line(struct skin_element* line, struct skin_draw_info *i
                     {
                         /* we are in a false branch of a %?aa<true> conditional */
                         if (last_value == 0)
-                            do_tags_in_hidden_conditional(child->children[0], info);
+                            do_tags_in_hidden_conditional(get_child(child->children, 0), info);
                         break;
                     }
                 }
                 else
                 {
                     if (last_value >= 0 && value != last_value && last_value < child->children_count)
-                        do_tags_in_hidden_conditional(child->children[last_value], info);
+                        do_tags_in_hidden_conditional(get_child(child->children, last_value), info);
                 }
-                if (child->children[value]->type == LINE_ALTERNATOR)
+                if (get_child(child->children, value)->type == LINE_ALTERNATOR)
                 {
                     func = skin_render_alternator;
                 }
-                else if (child->children[value]->type == LINE)
+                else if (get_child(child->children, value)->type == LINE)
                     func = skin_render_line;
                 
                 if (value != last_value)
@@ -492,7 +500,7 @@ static bool skin_render_line(struct skin_element* line, struct skin_draw_info *i
                     info->force_redraw = true;
                 }
                     
-                if (func(child->children[value], info))
+                if (func(get_child(child->children, value), info))
                     needs_update = true;
                 else
                     needs_update = needs_update || (last_value != value);
@@ -555,7 +563,7 @@ static int get_subline_timeout(struct gui_wps *gwps, struct skin_element* line)
     {
         if (element->children_count == 0)
             return retval; /* empty line, so force redraw */
-        element = element->children[0];
+        element = get_child(element->children, 0);
     }
     while (element)
     {
@@ -572,7 +580,7 @@ static int get_subline_timeout(struct gui_wps *gwps, struct skin_element* line)
                                            element->children_count);
             if (val >= 0)
             {
-                retval = get_subline_timeout(gwps, element->children[val]);
+                retval = get_subline_timeout(gwps, get_child(element->children, val));
                 if (retval >= 0)
                     return retval;
             }
@@ -611,11 +619,11 @@ bool skin_render_alternator(struct skin_element* element, struct skin_draw_info 
             try_line++;
             if (try_line >= element->children_count)
                 try_line = 0;
-            if (element->children[try_line]->children_count != 0)
+            if (get_child(element->children, try_line)->children_count != 0)
             {
-                current_line = element->children[try_line];
+                current_line = get_child(element->children, try_line);
                 rettimeout = get_subline_timeout(info->gwps, 
-                                                 current_line->children[0]);
+                                    get_child(current_line->children, 0));
                 if (rettimeout > 0)
                 {
                     suitable = true;
@@ -633,7 +641,7 @@ bool skin_render_alternator(struct skin_element* element, struct skin_draw_info 
         info->refresh_type = SKIN_REFRESH_ALL;
         info->force_redraw = true;
     }
-    bool ret = skin_render_line(element->children[alternator->current_line], info);
+    bool ret = skin_render_line(get_child(element->children, alternator->current_line), info);
     info->refresh_type = old_refresh;
     return changed_lines || ret;
 }
@@ -808,7 +816,7 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
         }
         /* render */
         if (viewport->children_count)
-            skin_render_viewport(viewport->children[0], gwps,
+            skin_render_viewport(get_child(viewport->children, 0), gwps,
                                  skin_viewport, vp_refresh_mode);
         refresh_mode = old_refresh_mode;
     }
