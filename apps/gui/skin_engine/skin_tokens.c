@@ -739,11 +739,14 @@ static const char* NOINLINE get_lif_token_value(struct gui_wps *gwps,
     switch (lif->operand.type)
     {
         case STRING:
+        {
+            char *cmp = SKINOFFSETTOPTR(skin_buffer, lif->operand.data.text);
             if (out_text == NULL)
                 return NULL;
-            a = strcmp(out_text, lif->operand.data.text);
+            a = strcmp(out_text, cmp);
             b = 0;
             break;
+        }
         case INTEGER:
         case DECIMAL:
             b = lif->operand.data.number;
@@ -752,7 +755,8 @@ static const char* NOINLINE get_lif_token_value(struct gui_wps *gwps,
         {
             char temp_buf[MAX_PATH];
             const char *outb;
-            struct wps_token *token = lif->operand.data.code->data;
+            struct skin_element *element = SKINOFFSETTOPTR(skin_buffer, lif->operand.data.code);
+            struct wps_token *token = element->data;
             b = lif->num_options;
             outb = get_token_value(gwps, token, offset, temp_buf,
                                    sizeof(temp_buf), &b);            

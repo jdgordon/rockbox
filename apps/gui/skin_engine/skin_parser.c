@@ -87,6 +87,17 @@ static bool isdefault(struct skin_tag_parameter *param)
     return param->type == DEFAULT;
 }
 
+static inline char*
+get_param_text(struct skin_element *element, int param_number)
+{
+    return SKINOFFSETTOPTR(skin_buffer, element->params[param_number].data.text);
+}
+
+static inline struct skin_element*
+get_param_code(struct skin_element *element, int param_number)
+{
+    return SKINOFFSETTOPTR(skin_buffer, element->params[param_number].data.code);
+}
 
 /* which screen are we parsing for? */
 static enum screen_type curr_screen;
@@ -292,7 +303,7 @@ static int parse_image_display(struct skin_element *element,
                                struct wps_token *token,
                                struct wps_data *wps_data)
 {
-    char *label = element->params[0].data.text;
+    char *label = get_param_text(element, 0);
     char sublabel = '\0';
     int subimage;
     struct gui_img *img;
@@ -321,7 +332,7 @@ static int parse_image_display(struct skin_element *element,
     if (element->params_count > 1)
     {
         if (element->params[1].type == CODE)
-            id->token = PTRTOSKINOFFSET(skin_buffer, element->params[1].data.code->data);
+            id->token = PTRTOSKINOFFSET(skin_buffer, get_param_code(element, 1)->data);
         /* specify a number. 1 being the first subimage (i.e top) NOT 0 */
         else if (element->params[1].type == INTEGER)
             id->subimage = element->params[1].data.number - 1;
@@ -357,8 +368,8 @@ static int parse_image_load(struct skin_element *element,
        or %xl(n,filename.bmp,x,y,num_subimages)
     */
 
-    id = element->params[0].data.text;
-    filename = element->params[1].data.text;
+    id = get_param_text(element, 0);
+    filename = get_param_text(element, 1);
     x = element->params[2].data.number;
     y = element->params[3].data.number;
 
@@ -422,7 +433,7 @@ static int parse_font_load(struct skin_element *element,
 {
     (void)wps_data; (void)token;
     int id = element->params[0].data.number;
-    char *filename = element->params[1].data.text;
+    char *filename = get_param_text(element, 1);
     int  glyphs;
     char *ptr;
     
@@ -468,7 +479,7 @@ static int parse_playlistview(struct skin_element *element,
     viewer->vp = PTRTOSKINOFFSET(skin_buffer, &curr_vp->vp);
     viewer->show_icons = true;
     viewer->start_offset = element->params[0].data.number;
-    viewer->line = PTRTOSKINOFFSET(skin_buffer, element->params[1].data.code);
+    viewer->line = PTRTOSKINOFFSET(skin_buffer, get_param_code(element, 1));
     
     token->value.data = PTRTOSKINOFFSET(skin_buffer, (void*)viewer);
     
@@ -487,12 +498,12 @@ static int parse_viewport_gradient_setup(struct skin_element *element,
     cfg = (struct gradient_config *)skin_buffer_alloc(sizeof(struct gradient_config)); 
     if (!cfg)
         return 1;
-    if (!parse_color(curr_screen, element->params[0].data.text, &cfg->start) ||
-        !parse_color(curr_screen, element->params[1].data.text, &cfg->end))
+    if (!parse_color(curr_screen, get_param_text(element, 0), &cfg->start) ||
+        !parse_color(curr_screen, get_param_text(element, 1), &cfg->end))
         return 1;
     if (element->params_count > 2)
     {
-        if (!parse_color(curr_screen, element->params[2].data.text, &cfg->text))
+        if (!parse_color(curr_screen, get_param_text(element, 2), &cfg->text))
             return 1;
     }
     else
@@ -520,7 +531,7 @@ static int parse_listitem(struct skin_element *element,
     {
         li->offset = element->params[0].data.number;
         if (element->params_count > 1)
-            li->wrap = strcasecmp(element->params[1].data.text, "nowrap") != 0;
+            li->wrap = strcasecmp(get_param_text(element, 1), "nowrap") != 0;
         else
             li->wrap = true;
     }
@@ -539,7 +550,7 @@ static int parse_listitemviewport(struct skin_element *element,
         return -1;
     cfg->data = wps_data;
     cfg->tile = false;
-    cfg->label = element->params[0].data.text;
+    cfg->label = get_param_text(element, 0);
     cfg->width = -1;
     cfg->height = -1;
     if (!isdefault(&element->params[1]))
@@ -547,7 +558,7 @@ static int parse_listitemviewport(struct skin_element *element,
     if (!isdefault(&element->params[2]))
         cfg->height = element->params[2].data.number;
     if (element->params_count > 3 &&
-        !strcmp(element->params[3].data.text, "tile"))
+        !strcmp(get_param_text(element, 3), "tile"))
         cfg->tile = true;
     token->value.data = PTRTOSKINOFFSET(skin_buffer, (void*)cfg);
 #endif
@@ -561,7 +572,7 @@ static int parse_viewporttextstyle(struct skin_element *element,
 {
     (void)wps_data;
     int style;
-    char *mode = element->params[0].data.text;
+    char *mode = get_param_text(element, 0);
     unsigned colour;
     
     if (!strcmp(mode, "invert"))
@@ -571,7 +582,7 @@ static int parse_viewporttextstyle(struct skin_element *element,
     else if (!strcmp(mode, "colour") || !strcmp(mode, "color"))
     {
         if (element->params_count < 2 ||
-            !parse_color(curr_screen, element->params[1].data.text, &colour))
+            !parse_color(curr_screen, get_param_text(element, 1), &colour))
             return 1;
         style = STYLE_COLORED|(STYLE_COLOR_MASK&colour); 
     }
@@ -584,7 +595,7 @@ static int parse_viewporttextstyle(struct skin_element *element,
         else /* atoi() instead of using a number in the parser is because [si]
               * will select the number for something which looks like a colour
               * making the "colour" case (above) harder to parse */
-            num_lines = atoi(element->params[1].data.text);
+            num_lines = atoi(get_param_text(element, 1));
         style = STYLE_GRADIENT|NUMLN_PACK(num_lines)|CURLN_PACK(0);
     }
 #endif
@@ -615,7 +626,8 @@ static int parse_viewportcolour(struct skin_element *element,
     }
     else
     {
-        if (!parse_color(curr_screen, param->data.text, &colour->colour))
+        if (!parse_color(curr_screen, SKINOFFSETTOPTR(skin_buffer, param->data.text),
+                    &colour->colour))
             return -1;
     }
     colour->vp = PTRTOSKINOFFSET(skin_buffer, &curr_vp->vp);
@@ -653,7 +665,7 @@ static int parse_image_special(struct skin_element *element,
         }
         else
         {
-            filename = element->params[0].data.text;
+            filename = get_param_text(element, 0);
             /* format: %X(filename.bmp) or %X(d) */
             if (!strcmp(filename, "d"))
                 filename = NULL;
@@ -678,7 +690,7 @@ static int parse_setting_and_lang(struct skin_element *element,
      * If that ever changes remove the #ifndef __PCTOOL__'s here 
      */
     (void)wps_data;
-    char *temp = element->params[0].data.text;
+    char *temp = get_param_text(element, 0);
     int i;
     
     if (token->type == SKIN_TOKEN_TRANSLATEDSTRING)
@@ -705,12 +717,12 @@ static int parse_logical_if(struct skin_element *element,
                              struct wps_data *wps_data)
 {
     (void)wps_data;
-    char *op = element->params[1].data.text;
+    char *op = get_param_text(element, 1);
     struct logical_if *lif = skin_buffer_alloc(sizeof(struct logical_if));
     if (!lif)
         return -1;
     token->value.data = PTRTOSKINOFFSET(skin_buffer, lif);
-    lif->token = PTRTOSKINOFFSET(skin_buffer, element->params[0].data.code->data);
+    lif->token = PTRTOSKINOFFSET(skin_buffer, get_param_code(element, 0)->data);
     
     if (!strncmp(op, "=", 1))
         lif->op = IF_EQUALS;
@@ -774,7 +786,7 @@ static int parse_substring_tag(struct skin_element* element,
         ss->length = -1;
     else
         ss->length = element->params[1].data.number;
-    ss->token = PTRTOSKINOFFSET(skin_buffer, element->params[2].data.code->data);
+    ss->token = PTRTOSKINOFFSET(skin_buffer, get_param_code(element, 2)->data);
     token->value.data = PTRTOSKINOFFSET(skin_buffer, ss);
     return 0;
 }
@@ -871,62 +883,63 @@ static int parse_progressbar_tag(struct skin_element* element,
     pb->horizontal = pb->width > pb->height;
     while (curr_param < element->params_count)
     {
+        char* text;
         param++;
-        if (!strcmp(param->data.text, "invert"))
+        text = SKINOFFSETTOPTR(skin_buffer, param->data.text);
+        if (!strcmp(text, "invert"))
             pb->invert_fill_direction = true;
-        else if (!strcmp(param->data.text, "nofill"))
+        else if (!strcmp(text, "nofill"))
             pb->nofill = true;
-        else if (!strcmp(param->data.text, "nobar"))
+        else if (!strcmp(text, "nobar"))
             pb->nobar = true;
-        else if (!strcmp(param->data.text, "slider"))
+        else if (!strcmp(text, "slider"))
         {
             if (curr_param+1 < element->params_count)
             {
                 curr_param++;
                 param++;
+                text = SKINOFFSETTOPTR(skin_buffer, param->data.text);
                 pb->slider = PTRTOSKINOFFSET(skin_buffer,
-                        skin_find_item(param->data.text, 
-                                    SKIN_FIND_IMAGE, wps_data));
+                        skin_find_item(text, SKIN_FIND_IMAGE, wps_data));
             }
             else /* option needs the next param */
                 return -1;
         }
-        else if (!strcmp(param->data.text, "image"))
+        else if (!strcmp(text, "image"))
         {
             if (curr_param+1 < element->params_count)
             {
                 curr_param++;
                 param++;
-                image_filename = param->data.text;
-                
+                image_filename = SKINOFFSETTOPTR(skin_buffer, param->data.text);
             }
             else /* option needs the next param */
                 return -1;
         }
-        else if (!strcmp(param->data.text, "backdrop"))
+        else if (!strcmp(text, "backdrop"))
         {
             if (curr_param+1 < element->params_count)
             {
                 curr_param++;
                 param++;
+                text = SKINOFFSETTOPTR(skin_buffer, param->data.text);
                 pb->backdrop = PTRTOSKINOFFSET(skin_buffer, 
-                        skin_find_item(param->data.text, 
-                                        SKIN_FIND_IMAGE, wps_data));
+                        skin_find_item(text, SKIN_FIND_IMAGE, wps_data));
                 
             }
             else /* option needs the next param */
                 return -1;
         }
-        else if (!strcmp(param->data.text, "vertical"))
+        else if (!strcmp(text, "vertical"))
         {
             pb->horizontal = false;
             if (isdefault(&element->params[3]))
                 pb->height = vp->height - pb->y;
         }
-        else if (!strcmp(param->data.text, "horizontal"))
+        else if (!strcmp(text, "horizontal"))
             pb->horizontal = true;
         else if (curr_param == 4)
-            image_filename = param->data.text;
+            image_filename = text;
             
         curr_param++;
     }
@@ -1044,7 +1057,7 @@ static int parse_albumart_load(struct skin_element* element,
         
     if (element->params_count > 4 && !isdefault(&element->params[4]))
     {
-        switch (*element->params[4].data.text)
+        switch (*get_param_text(element, 4))
         {
             case 'l':
             case 'L':
@@ -1068,7 +1081,7 @@ static int parse_albumart_load(struct skin_element* element,
     }
     if (element->params_count > 5 && !isdefault(&element->params[5]))
     {
-        switch (*element->params[5].data.text)
+        switch (*get_param_text(element, 5))
         {
             case 't':
             case 'T':
@@ -1112,7 +1125,7 @@ static int parse_skinvar(  struct skin_element *element,
                            struct wps_token *token,
                            struct wps_data *wps_data)
 {
-    const char* label = element->params[0].data.text;
+    const char* label = get_param_text(element, 0);
     struct skin_var* var = find_or_add_var(label, wps_data);
     if (!var)
         return WPS_ERROR_INVALID_PARAM;
@@ -1131,13 +1144,13 @@ static int parse_skinvar(  struct skin_element *element,
             data->var = PTRTOSKINOFFSET(skin_buffer, var);
             data->newval = element->params[2].data.number;
             data->max = 0;
-            if (!strcmp(element->params[1].data.text, "set"))
+            if (!strcmp(get_param_text(element, 1), "set"))
                 data->direct = true;
-            else if (!strcmp(element->params[1].data.text, "inc"))
+            else if (!strcmp(get_param_text(element, 1), "inc"))
             {
                 data->direct = false;
             }
-            else if (!strcmp(element->params[1].data.text, "dec"))
+            else if (!strcmp(get_param_text(element, 1), "dec"))
             {
                 data->direct = false;
                 data->newval *= -1;
@@ -1186,7 +1199,7 @@ static int parse_lasttouch(struct skin_element *element,
     for (i=0; i<element->params_count; i++)
     {
         if (element->params[i].type == STRING)
-            region = skin_find_item(element->params[i].data.text,
+            region = skin_find_item(get_param_text(element, i),
                                           SKIN_FIND_TOUCHREGION, wps_data);
         else if (element->params[i].type == INTEGER ||
                  element->params[i].type == DECIMAL)
@@ -1239,7 +1252,7 @@ static int touchregion_setup_setting(struct skin_element *element, int param_no,
 {
 #ifndef __PCTOOL__
     int p = param_no;
-    char *name = element->params[p++].data.text;
+    char *name = get_param_text(element, p++);
     int j;
 
     region->setting_data.setting = find_setting_by_cfgname(name, &j);
@@ -1255,7 +1268,7 @@ static int touchregion_setup_setting(struct skin_element *element, int param_no,
         if (element->params_count < p+1)
             return -1;
 
-        text = element->params[p++].data.text;
+        text = get_param_text(element, p++);
         switch (settings[j].flags&F_T_MASK)
         {
         case F_T_CUSTOM:
@@ -1321,7 +1334,7 @@ static int parse_touchregion(struct skin_element *element,
     
     if (element->params[0].type == STRING)
     {
-        region->label = PTRTOSKINOFFSET(skin_buffer, element->params[0].data.text);
+        region->label = PTRTOSKINOFFSET(skin_buffer, get_param_text(element, 0));
         p = 1;
         /* "[SI]III[SI]|SS" is the param list. There MUST be 4 numbers
          * followed by at least one string. Verify that here */
@@ -1346,7 +1359,7 @@ static int parse_touchregion(struct skin_element *element,
     region->last_press = 0xffff;
     region->press_length = PRESS;
     region->allow_while_locked = false;
-    action = element->params[p++].data.text;
+    action = get_param_text(element, p++);
 
     /* figure out the action */
     if(!strcmp(pb_string, action))
@@ -1382,7 +1395,7 @@ static int parse_touchregion(struct skin_element *element,
     }
     while (p < element->params_count)
     {
-        char* param = element->params[p++].data.text;
+        char* param = get_param_text(element, p++);
         if (!strcmp(param, "allow_while_locked"))
             region->allow_while_locked = true;
         else if (!strcmp(param, "reverse_bar"))
@@ -1788,13 +1801,13 @@ static int convert_viewport(struct wps_data *data, struct skin_element* element)
             else
             {
                 skin_vp->hidden_flags = VP_NEVER_VISIBLE;
-                skin_vp->label = PTRTOSKINOFFSET(skin_buffer, param->data.text);
+                skin_vp->label = param->data.text;
             }
         }
         else
         {
                 skin_vp->hidden_flags = VP_DRAW_HIDEABLE|VP_DRAW_HIDDEN;
-                skin_vp->label = PTRTOSKINOFFSET(skin_buffer, param->data.text);
+                skin_vp->label = param->data.text;
         }
         param++;
     }
@@ -1961,7 +1974,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
                     break;
                 case SKIN_TOKEN_VIEWPORT_ENABLE:
                 case SKIN_TOKEN_UIVIEWPORT_ENABLE:
-                    token->value.data = PTRTOSKINOFFSET(skin_buffer, element->params[0].data.text);
+                    token->value.data = PTRTOSKINOFFSET(skin_buffer, get_param_text(element, 0));
                     break;
                 case SKIN_TOKEN_IMAGE_PRELOAD_DISPLAY:
                     function = parse_image_display;

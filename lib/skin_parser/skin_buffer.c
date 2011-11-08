@@ -60,6 +60,11 @@
 static size_t buf_size;
 static unsigned char *buffer_start = NULL;
 static unsigned char *buffer_front = NULL;
+
+long skin_buffer_to_offset(void *pointer)
+{
+    return pointer == NULL ? -1 : (void*)pointer - (void*)buffer_start;
+}
 #endif
 
 #ifdef USE_HOST_MALLOC

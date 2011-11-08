@@ -746,15 +746,15 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
         {
             /* Scanning a string argument */
             element->params[i].type = STRING;
-            element->params[i].data.text = scan_string(&cursor);
+            element->params[i].data.text = skin_buffer_to_offset(scan_string(&cursor));
 
         }
         else if(tolower(type_code) == 'c')
         {
             /* Recursively parsing a code argument */
             element->params[i].type = CODE;
-            element->params[i].data.code = skin_parse_code_as_arg(&cursor);
-            if(!element->params[i].data.code)
+            element->params[i].data.code = skin_buffer_to_offset(skin_parse_code_as_arg(&cursor));
+            if(element->params[i].data.code < 0)
                 return 0;
         }
         else if (tolower(type_code) == 't')
@@ -765,7 +765,7 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
                 return 0;
             child->next = NULL;
             element->params[i].type = CODE;
-            element->params[i].data.code = child;
+            element->params[i].data.code = skin_buffer_to_offset(child);
         }
             
 

@@ -29,6 +29,20 @@ extern "C"
 #include <stdlib.h>
 #include <stdbool.h>
 
+
+/* Use this type and macro to convert a pointer from the
+ * skin buffer to a useable pointer */
+typedef long skinoffset;
+#define SKINOFFSETTOPTR(base, offset) ((offset) < 0 ? NULL : ((void*)&base[offset]))
+#define PTRTOSKINOFFSET(base, pointer) ((pointer) ? ((void*)pointer-(void*)base) : -1)
+/* Use this macro when declaring a variable to self-document the code.
+ * type is the actual type being pointed to (i.e OFFSETTYPE(char*) foo )
+ * 
+ * WARNING: Don't use the PTRTOSKINOFFSET() around a function call as it wont
+ * do what you expect.
+ */
+#define OFFSETTYPE(type) skinoffset
+
 /********************************************************************
  ****** Data Structures *********************************************
  *******************************************************************/
@@ -78,8 +92,8 @@ struct skin_tag_parameter
     union
     {
         int number;
-        char* text;
-        struct skin_element* code;
+        OFFSETTYPE(char*) text;
+        OFFSETTYPE(struct skin_element*) code;
     } data;
 
     char type_code;

@@ -28,18 +28,6 @@
 #include "tag_table.h"
 #include "skin_parser.h"
 
-/* Use this type and macro to convert a pointer from the
- * skin buffer to a useable pointer */
-typedef long skinoffset;
-#define SKINOFFSETTOPTR(base, offset) ((offset) < 0 ? NULL : ((void*)&base[offset]))
-#define PTRTOSKINOFFSET(base, pointer) ((pointer) ? ((void*)pointer-(void*)base) : -1)
-/* Use this macro when declaring a variable to self-document the code.
- * type is the actual type being pointed to (i.e OFFSETTYPE(char*) foo )
- * 
- * WARNING: Don't use the PTRTOSKINOFFSET() around a function call as it wont
- * do what you expect.
- */
-#define OFFSETTYPE(type) skinoffset
 extern char skin_buffer[];
 
 /* Timeout unit expressed in HZ. In WPS, all timeouts are given in seconds
