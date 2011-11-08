@@ -181,7 +181,7 @@ void *skin_find_item(const char *label, enum skin_find_what what,
         {
             case SKIN_FIND_UIVP:
             case SKIN_FIND_VP:
-                ret = list.vplist->data;
+                ret = SKINOFFSETTOPTR(skin_buffer, list.vplist->data);
                 if (((struct skin_viewport *)ret)->label == VP_DEFAULT_LABEL)
                     itemlabel = VP_DEFAULT_LABEL_STRING;
                 else
@@ -255,7 +255,7 @@ static int parse_statusbar_tags(struct skin_element* element,
     else
     {
         struct skin_element *def_vp = SKINOFFSETTOPTR(skin_buffer, wps_data->tree);
-        struct skin_viewport *default_vp = def_vp->data;
+        struct skin_viewport *default_vp = SKINOFFSETTOPTR(skin_buffer, def_vp->data);
         if (def_vp->params_count == 0)
         {
             wps_data->wps_sb_tag = true;
@@ -1675,7 +1675,7 @@ static bool skin_load_fonts(struct wps_data *data)
     {
         /* first, find the viewports that have a non-sys/ui-font font */
         struct skin_viewport *skin_vp =
-                (struct skin_viewport*)vp_list->data;
+                SKINOFFSETTOPTR(skin_buffer, vp_list->data);
         struct viewport *vp = &skin_vp->vp;
 
         font_id = skin_vp->parsed_fontid;
@@ -1762,7 +1762,7 @@ static int convert_viewport(struct wps_data *data, struct skin_element* element)
     skin_vp->label = PTRTOSKINOFFSET(skin_buffer, NULL);
     skin_vp->is_infovp = false;
     skin_vp->parsed_fontid = 1;
-    element->data = skin_vp;
+    element->data = PTRTOSKINOFFSET(skin_buffer, skin_vp);
     curr_vp = skin_vp;
     curr_viewport_element = element;
     
@@ -1893,7 +1893,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
             else
                 curr_line->update_mode |= element->tag->flags&SKIN_REFRESH_ALL;
             
-            element->data = token;
+            element->data = PTRTOSKINOFFSET(skin_buffer, token);
             
             /* Some tags need special handling for the tag, so add them here */
             switch (token->type)
@@ -2038,7 +2038,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
                 (struct line *)skin_buffer_alloc(sizeof(struct line));
             line->update_mode = SKIN_REFRESH_STATIC;
             curr_line = line;
-            element->data = line;
+            element->data = PTRTOSKINOFFSET(skin_buffer, line);
         }
         break;
         case LINE_ALTERNATOR:
@@ -2049,7 +2049,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
 #ifndef __PCTOOL__
             alternator->next_change_tick = current_tick;
 #endif
-            element->data = alternator;
+            element->data = PTRTOSKINOFFSET(skin_buffer, alternator);
         }
         break;
         case CONDITIONAL:
@@ -2057,8 +2057,8 @@ static int skin_element_callback(struct skin_element* element, void* data)
             struct conditional *conditional = 
                 (struct conditional *)skin_buffer_alloc(sizeof(struct conditional));
             conditional->last_value = -1;
-            conditional->token = PTRTOSKINOFFSET(skin_buffer, element->data);
-            element->data = conditional;
+            conditional->token = element->data;
+            element->data = PTRTOSKINOFFSET(skin_buffer, conditional);
             if (!check_feature_tag(element->tag->type))
             {
                 return FEATURE_NOT_AVAILABLE;

@@ -88,7 +88,7 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
     (void)vp; /* silence warnings */
     (void)info;
 #endif    
-    struct wps_token *token = (struct wps_token *)element->data;
+    struct wps_token *token = (struct wps_token *)SKINOFFSETTOPTR(skin_buffer, element->data);
 
 #ifdef HAVE_LCD_BITMAP
     struct wps_data *data = gwps->data;
@@ -132,7 +132,7 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
             struct skin_element *viewport = SKINOFFSETTOPTR(skin_buffer, gwps->data->tree);
             while (viewport)
             {
-                struct skin_viewport *skinvp = (struct skin_viewport*)viewport->data;
+                struct skin_viewport *skinvp = SKINOFFSETTOPTR(skin_buffer, viewport->data);
                 
                 char *vplabel = SKINOFFSETTOPTR(skin_buffer, skinvp->label);
                 if (skinvp->label == VP_DEFAULT_LABEL)
@@ -328,13 +328,13 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                 child = child->next;
                 continue;
             }
-            else if (child->type != TAG || !child->data)
+            else if (child->type != TAG || !SKINOFFSETTOPTR(skin_buffer, child->data))
             {
                 child = child->next;
                 continue;
             }
 #if defined(HAVE_LCD_BITMAP) || defined(HAVE_ALBUMART)
-            token = (struct wps_token *)child->data;
+            token = (struct wps_token *)SKINOFFSETTOPTR(skin_buffer, child->data);
 #endif
 #ifdef HAVE_LCD_BITMAP
             /* clear all pictures in the conditional and nested ones */
@@ -357,7 +357,7 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                      viewport;
                      viewport = viewport->next)
                 {
-                    struct skin_viewport *skin_viewport = (struct skin_viewport*)viewport->data;
+                    struct skin_viewport *skin_viewport = SKINOFFSETTOPTR(skin_buffer, viewport->data);
                     
                     char *vplabel = SKINOFFSETTOPTR(skin_buffer, skin_viewport->label);
                     if (skin_viewport->label == VP_DEFAULT_LABEL)
@@ -456,7 +456,7 @@ static bool skin_render_line(struct skin_element* line, struct skin_draw_info *i
         switch (child->type)
         {
             case CONDITIONAL:
-                conditional = (struct conditional*)child->data;
+                conditional = SKINOFFSETTOPTR(skin_buffer, child->data);
                 last_value = conditional->last_value;
                 value = evaluate_conditional(info->gwps, info->offset, 
                                              conditional, child->children_count);
@@ -507,14 +507,14 @@ static bool skin_render_line(struct skin_element* line, struct skin_draw_info *i
                 
                 fix_line_alignment(info, child);
                 
-                if (!child->data)
+                if (!SKINOFFSETTOPTR(skin_buffer, child->data))
                 {
                     break;
                 }
                 if (!do_non_text_tags(info->gwps, info, child, &info->skin_vp->vp))
                 {
                     static char tempbuf[128];
-                    const char *valuestr = get_token_value(info->gwps, child->data,
+                    const char *valuestr = get_token_value(info->gwps, SKINOFFSETTOPTR(skin_buffer, child->data),
                                                         info->offset, tempbuf,
                                                         sizeof(tempbuf), NULL);
                     if (valuestr)
@@ -531,7 +531,7 @@ static bool skin_render_line(struct skin_element* line, struct skin_draw_info *i
                 }
                 break;
             case TEXT:
-                strlcat(info->cur_align_start, child->data, 
+                strlcat(info->cur_align_start, SKINOFFSETTOPTR(skin_buffer, child->data), 
                         info->buf_size - (info->cur_align_start-info->buf));
                 needs_update = needs_update || 
                                 (info->refresh_type&SKIN_REFRESH_STATIC) != 0;
@@ -562,12 +562,12 @@ static int get_subline_timeout(struct gui_wps *gwps, struct skin_element* line)
         if (element->type == TAG &&
             element->tag->type == SKIN_TOKEN_SUBLINE_TIMEOUT )
         {
-            token = element->data;
+            token = SKINOFFSETTOPTR(skin_buffer, element->data);
             return token->value.i;
         }
         else if (element->type == CONDITIONAL)
         {
-            struct conditional *conditional = element->data;
+            struct conditional *conditional = SKINOFFSETTOPTR(skin_buffer, element->data);
             int val = evaluate_conditional(gwps, 0, conditional,
                                            element->children_count);
             if (val >= 0)
@@ -585,7 +585,7 @@ static int get_subline_timeout(struct gui_wps *gwps, struct skin_element* line)
 bool skin_render_alternator(struct skin_element* element, struct skin_draw_info *info)
 {
     bool changed_lines = false;
-    struct line_alternator *alternator = (struct line_alternator*)element->data;
+    struct line_alternator *alternator = SKINOFFSETTOPTR(skin_buffer, element->data);
     unsigned old_refresh = info->refresh_type;
     if (info->refresh_type == SKIN_REFRESH_ALL)
     {
@@ -758,7 +758,7 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
     }
 #endif
     viewport = SKINOFFSETTOPTR(skin_buffer, data->tree);
-    skin_viewport = (struct skin_viewport *)viewport->data;
+    skin_viewport = SKINOFFSETTOPTR(skin_buffer, viewport->data);
     label = SKINOFFSETTOPTR(skin_buffer, skin_viewport->label);
     if (skin_viewport->label == VP_DEFAULT_LABEL)
         label = VP_DEFAULT_LABEL_STRING;
@@ -771,7 +771,7 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
          viewport = viewport->next)
     {
         /* SETUP */
-        skin_viewport = (struct skin_viewport*)viewport->data;
+        skin_viewport = SKINOFFSETTOPTR(skin_buffer, viewport->data);
         unsigned vp_refresh_mode = refresh_mode;
 #if (LCD_DEPTH > 1) || (defined(HAVE_REMOTE_LCD) && LCD_REMOTE_DEPTH > 1)
         skin_viewport->vp.fg_pattern = skin_viewport->start_fgcolour;

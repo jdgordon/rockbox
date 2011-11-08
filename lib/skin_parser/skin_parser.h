@@ -113,7 +113,7 @@ struct skin_element
      * TEXT and COMMENT uses it for the text string
      * TAG, VIEWPORT, LINE, etc may use it for post parse extra storage
      */
-    void* data;
+    OFFSETTYPE(void*) data;
 
     /* The tag or conditional name */
     const struct tag_info *tag;

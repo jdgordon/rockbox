@@ -856,8 +856,9 @@ static int skin_parse_text(struct skin_element* element, const char** document,
     element->type = TEXT;
     element->line = skin_line;
     element->next = NULL;
-    element->data = text = skin_alloc_string(length);
-    if (!element->data)
+    text = skin_alloc_string(length);
+    element->data = skin_buffer_to_offset(text);
+    if (element->data < 0)
         return 0;
     
     for(dest = 0; dest < length; dest++)
@@ -1056,7 +1057,7 @@ static int skin_parse_comment(struct skin_element* element, const char** documen
     element->type = COMMENT;
     element->line = skin_line;
 #ifdef ROCKBOX 
-    element->data = NULL;
+    element->data = -1;
 #else    
     element->data = text = skin_alloc_string(length);
     if (!element->data)
