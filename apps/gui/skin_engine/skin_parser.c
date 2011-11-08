@@ -213,7 +213,7 @@ void *skin_find_item(const char *label, enum skin_find_what what,
             return ret;
         
         if (isvplist)
-            list.vplist = list.vplist->next;
+            list.vplist = SKINOFFSETTOPTR(skin_buffer, list.vplist->next);
         else
             list.linkedlist = SKINOFFSETTOPTR(skin_buffer, list.linkedlist->next);
     }
@@ -1671,7 +1671,8 @@ static bool skin_load_fonts(struct wps_data *data)
     struct skin_element *vp_list;
     int font_id;
     /* walk though each viewport and assign its font */
-    for(vp_list = SKINOFFSETTOPTR(skin_buffer, data->tree); vp_list; vp_list = vp_list->next)
+    for(vp_list = SKINOFFSETTOPTR(skin_buffer, data->tree);
+        vp_list; vp_list = SKINOFFSETTOPTR(skin_buffer, vp_list->next))
     {
         /* first, find the viewports that have a non-sys/ui-font font */
         struct skin_viewport *skin_vp =

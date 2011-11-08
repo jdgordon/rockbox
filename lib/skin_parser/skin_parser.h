@@ -106,7 +106,7 @@ struct skin_tag_parameter
 struct skin_element
 {
     /* Link to the next element */
-    struct skin_element* next;
+    OFFSETTYPE(struct skin_element*) next;
     /* Pointer to an array of children */
     OFFSETTYPE(struct skin_element**) children;
     /* Placeholder for element data

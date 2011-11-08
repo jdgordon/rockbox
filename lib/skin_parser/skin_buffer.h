@@ -29,6 +29,7 @@ void skin_buffer_init(char* buffer, size_t size);
 /* Allocate size bytes from the buffer */
 
 long skin_buffer_to_offset(void *pointer);
+void* skin_buffer_from_offset(long offset);
 
 /* #define DEBUG_SKIN_ALLOCATIONS */
 

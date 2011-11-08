@@ -89,7 +89,7 @@ int sb_postproccess(enum screen_type screen, struct wps_data *data)
         * hence .sbs's without any other vps are unsupported*/
         struct skin_viewport *vp = skin_find_item(VP_DEFAULT_LABEL_STRING, SKIN_FIND_VP, data);
         struct skin_element *tree = SKINOFFSETTOPTR(skin_buffer, data->tree);
-        struct skin_element *next_vp = tree->next;
+        struct skin_element *next_vp = SKINOFFSETTOPTR(skin_buffer, tree->next);
         
         if (vp)
         {

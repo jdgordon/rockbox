@@ -65,6 +65,11 @@ long skin_buffer_to_offset(void *pointer)
 {
     return pointer == NULL ? -1 : (void*)pointer - (void*)buffer_start;
 }
+
+void* skin_buffer_from_offset(long offset)
+{
+    return offset < 0 ? NULL : buffer_start + offset;
+}
 #endif
 
 #ifdef USE_HOST_MALLOC

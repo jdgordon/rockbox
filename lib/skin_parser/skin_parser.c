@@ -81,8 +81,6 @@ struct skin_element* skin_parse(const char* document)
     struct skin_element* root = NULL;
     struct skin_element* last = NULL;
 
-    struct skin_element** to_write = 0;
-
     const char* cursor = document; /*Keeps track of location in the document*/
     
     skin_line = 1;
@@ -93,14 +91,19 @@ struct skin_element* skin_parse(const char* document)
 
     while(*cursor != '\0')
     {
+        printf("skin_parse: %d\n", skin_line);
+        struct skin_element* tree = skin_parse_viewport(&cursor);
         if(!root)
-            to_write = &root;
+        {
+            root = tree;
+            last = root;
+        }
         else
-            to_write = &(last->next);
+        {
+            last->next = skin_buffer_to_offset(tree);
+            last = tree;
+        }
 
-
-        *to_write = skin_parse_viewport(&cursor);
-        last = *to_write;
         if(!last)
         {
             skin_free_tree(root); /* Clearing any memory already used */
@@ -108,8 +111,8 @@ struct skin_element* skin_parse(const char* document)
         }
 
         /* Making sure last is at the end */
-        while(last->next)
-            last = last->next;
+        while(last->next >= 0)
+            last = skin_buffer_from_offset(last->next);
 
     }
     return root;
@@ -132,7 +135,6 @@ static struct skin_element* skin_parse_viewport(const char** document)
     retval->line = skin_line;
     viewport_line = skin_line;
 
-    struct skin_element** to_write = 0;
     struct skin_element** children;
 
     const char* cursor = *document; /* Keeps track of location in the document */
@@ -213,15 +215,20 @@ static struct skin_element* skin_parse_viewport(const char** document)
         }
         cursor = bookmark;
 
-        if(!root)
-            to_write = &root;
-        else
-            to_write = &(last->next);
-
         if(sublines)
         {
-            *to_write = skin_parse_sublines(&cursor);
-            last = *to_write;
+            printf("skin_parse_sublines: %d\n", skin_line);
+            struct skin_element* out = skin_parse_sublines(&cursor);
+            if (!root)
+            {
+                root = out;
+                last = root;
+            }
+            else
+            {
+                last->next = skin_buffer_to_offset(out);
+                last = out;
+            }
             if(!last)
                 return NULL;
         }
@@ -238,15 +245,26 @@ static struct skin_element* skin_parse_viewport(const char** document)
             if (check_viewport(cursor))
                 break;
 #endif
-            *to_write = skin_parse_line(&cursor);
-            last = *to_write;
+            
+            printf("skin_parse_line: %d\n", skin_line);
+            struct skin_element* out = skin_parse_line(&cursor);
+            if (!root)
+            {
+                root = out;
+                last = root;
+            }
+            else
+            {
+                last->next = skin_buffer_to_offset(out);
+                last = out;
+            }
             if(!last)
                 return NULL;
 
         }
         /* Making sure last is at the end */
-        while(last->next)
-            last = last->next;
+        while(last->next >= 0)
+            last = skin_buffer_from_offset(last->next);
 
         if(*cursor == '\n')
         {
@@ -347,10 +365,11 @@ static struct skin_element* skin_parse_line_optional(const char** document,
         /* Allocating memory if necessary */
         if(root)
         {
-            current->next = skin_alloc_element();
-            if (!current->next)
+            struct skin_element *next = skin_alloc_element();
+            if (!next)
                 return NULL;
-            current = current->next;
+            current->next = skin_buffer_to_offset(next);
+            current = next;
         }
         else
         {
@@ -412,7 +431,7 @@ static struct skin_element* skin_parse_sublines_optional(const char** document,
     if (!retval)
         return NULL;
     retval->type = LINE_ALTERNATOR;
-    retval->next = NULL;
+    retval->next = skin_buffer_to_offset(NULL);
     retval->line = skin_line;
 
     /* First we count the sublines */
@@ -771,7 +790,7 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
             child->type = TAG;
             if (!skin_parse_tag(child, &cursor))
                 return 0;
-            child->next = NULL;
+            child->next = skin_buffer_to_offset(NULL);
             element->params[i].type = CODE;
             element->params[i].data.code = skin_buffer_to_offset(child);
         }
@@ -863,7 +882,7 @@ static int skin_parse_text(struct skin_element* element, const char** document,
     /* Copying the text into the element struct */
     element->type = TEXT;
     element->line = skin_line;
-    element->next = NULL;
+    element->next = skin_buffer_to_offset(NULL);
     text = skin_alloc_string(length);
     element->data = skin_buffer_to_offset(text);
     if (element->data < 0)
@@ -1142,7 +1161,7 @@ struct skin_element* skin_alloc_element()
     if (!retval)
         return NULL;
     retval->type = UNKNOWN;
-    retval->next = NULL;
+    retval->next = skin_buffer_to_offset(NULL);
     retval->tag = NULL;
     retval->params_count = 0;
     retval->children_count = 0;

@@ -154,7 +154,7 @@ static bool do_non_text_tags(struct gui_wps *gwps, struct skin_draw_info *info,
                     }    
                     skinvp->hidden_flags = temp;
                 }
-                viewport = viewport->next;
+                viewport = SKINOFFSETTOPTR(skin_buffer, viewport->next);
             }
         }
         break;
@@ -333,12 +333,12 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                 {
                     do_tags_in_hidden_conditional(get_child(branch->children, i), info);
                 }
-                child = child->next;
+                child = SKINOFFSETTOPTR(skin_buffer, child->next);
                 continue;
             }
             else if (child->type != TAG || !SKINOFFSETTOPTR(skin_buffer, child->data))
             {
-                child = child->next;
+                child = SKINOFFSETTOPTR(skin_buffer, child->next);
                 continue;
             }
 #if defined(HAVE_LCD_BITMAP) || defined(HAVE_ALBUMART)
@@ -363,7 +363,7 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                 struct skin_element *viewport;
                 for (viewport = SKINOFFSETTOPTR(skin_buffer, data->tree);
                      viewport;
-                     viewport = viewport->next)
+                     viewport = SKINOFFSETTOPTR(skin_buffer, viewport->next))
                 {
                     struct skin_viewport *skin_viewport = SKINOFFSETTOPTR(skin_buffer, viewport->data);
                     
@@ -399,7 +399,7 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                         playback_current_aa_hid(data->playback_aa_slot), true);
             }
 #endif
-            child = child->next;
+            child = SKINOFFSETTOPTR(skin_buffer, child->next);
         }
     }
 }
@@ -549,7 +549,7 @@ static bool skin_render_line(struct skin_element* line, struct skin_draw_info *i
                 break;
         }
 
-        child = child->next;
+        child = SKINOFFSETTOPTR(skin_buffer, child->next);
     }
     return needs_update;
 }
@@ -585,7 +585,7 @@ static int get_subline_timeout(struct gui_wps *gwps, struct skin_element* line)
                     return retval;
             }
         }
-        element = element->next;
+        element = SKINOFFSETTOPTR(skin_buffer, element->next);
     }
     return retval;
 }
@@ -739,7 +739,7 @@ void skin_render_viewport(struct skin_element* viewport, struct gui_wps *gwps,
         }
         if (!info.no_line_break)
             info.line_number++;
-        line = line->next;
+        line = SKINOFFSETTOPTR(skin_buffer, line->next);
     }
 #ifdef HAVE_LCD_BITMAP
     wps_display_images(gwps, &skin_viewport->vp);
@@ -776,7 +776,7 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
     
     for (viewport = SKINOFFSETTOPTR(skin_buffer, data->tree);
          viewport;
-         viewport = viewport->next)
+         viewport = SKINOFFSETTOPTR(skin_buffer, viewport->next))
     {
         /* SETUP */
         skin_viewport = SKINOFFSETTOPTR(skin_buffer, viewport->data);

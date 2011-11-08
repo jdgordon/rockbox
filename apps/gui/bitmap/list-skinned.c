@@ -184,7 +184,7 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
         
         for (viewport = SKINOFFSETTOPTR(skin_buffer, listcfg[screen]->data->tree);
              viewport;
-             viewport = viewport->next)
+             viewport = SKINOFFSETTOPTR(skin_buffer, viewport->next))
         {
             int origional_x, origional_y;
             int origional_w, origional_h;
