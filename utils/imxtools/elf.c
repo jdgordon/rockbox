@@ -19,6 +19,7 @@
  *
  ****************************************************************************/
 #include "elf.h"
+#include "misc.h"
 
 /**
  * Definitions
@@ -152,10 +153,7 @@ typedef struct
 
 void elf_init(struct elf_params_t *params)
 {
-    params->has_start_addr = false;
-    params->start_addr = 0;
-    params->first_section = NULL;
-    params->last_section = NULL;
+    memset(params, 0, sizeof(struct elf_params_t));
 }
 
 extern void *xmalloc(size_t s);
@@ -219,8 +217,11 @@ void elf_add_fill_section(struct elf_params_t *params,
     sec->pattern = pattern;
 }
 
-void elf_write_file(struct elf_params_t *params, elf_write_fn_t write, void *user)
+void elf_write_file(struct elf_params_t *params, elf_write_fn_t write,
+    elf_printf_fn_t printf, void *user)
 {
+    (void) printf;
+    
     Elf32_Ehdr ehdr;
     uint32_t phnum = 0;
     struct elf_section_t *sec = params->first_section;
@@ -235,6 +236,10 @@ void elf_write_file(struct elf_params_t *params, elf_write_fn_t write, void *use
         {
             sec->offset = offset;
             offset += sec->size;
+        }
+        else
+        {
+            sec->offset = 0;
         }
         
         phnum++;
@@ -455,6 +460,7 @@ bool elf_read_file(struct elf_params_t *params, elf_read_fn_t read,
             if(!read(user, shdr.sh_offset, data, shdr.sh_size))
                 error_printf("error read self section data\n");
             elf_add_load_section(params, shdr.sh_addr, shdr.sh_size, data);
+            free(data);
 
             if(strtab)
                 printf(user, false, "create load segment for %s\n", &strtab[shdr.sh_name]);
@@ -472,6 +478,7 @@ bool elf_read_file(struct elf_params_t *params, elf_read_fn_t read,
         }
         
     }
+    free(strtab);
     /* run through segments */
     for(int i = 1; i < ehdr.e_phnum; i++)
     {
@@ -549,16 +556,20 @@ int elf_get_nr_sections(struct elf_params_t *params)
 
 void elf_release(struct elf_params_t *params)
 {
-    struct elf_section_t *sec, *next_sec;
-    sec = params->first_section;
+    struct elf_section_t *sec = params->first_section;
     while(sec)
     {
-        next_sec = sec->next;
+        struct elf_section_t *next_sec = sec->next;
         if(sec->type == EST_LOAD)
             free(sec->section);
         free(sec);
         sec = next_sec;
     }
-    params->first_section = NULL;
-    params->last_section = NULL;
+    struct elf_segment_t *seg = params->first_segment;
+    while(seg)
+    {
+        struct elf_segment_t *next_seg = seg->next;
+        free(seg);
+        seg = next_seg;
+    }
 }

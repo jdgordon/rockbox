@@ -824,13 +824,43 @@ bufpanic:
     panicf("%s(): EOM (%zu > %zu)", __func__, allocsize, filebuflen);
 }
 
-
 /* Buffer must not move. */
 static int shrink_callback(int handle, unsigned hints, void* start, size_t old_size)
 {
-    long offset = audio_current_track()->offset;
-    int status = audio_status();
+    struct queue_event ev;
+    static const long filter_list[][2] =
+    {
+        /* codec messages */
+        { Q_AUDIO_PLAY, Q_AUDIO_PLAY },
+    };
+    /* filebuflen is, at this point, the buffering.c buffer size,
+     * i.e. the audiobuf except voice, scratch mem, pcm, ... */
+    ssize_t extradata_size = old_size - filebuflen;
+    /* check what buflib requests */
+    size_t wanted_size = (hints & BUFLIB_SHRINK_SIZE_MASK);
+    ssize_t size = (ssize_t)old_size - wanted_size;
+    /* keep at least 256K for the buffering */
+    if ((size - extradata_size) < 256*1024)
+        return BUFLIB_CB_CANNOT_SHRINK;
+
+
     /* TODO: Do it without stopping playback, if possible */
+    long offset = audio_current_track()->offset;
+    bool playing = (audio_status() & AUDIO_STATUS_PLAY) == AUDIO_STATUS_PLAY;
+    /* There's one problem with stoping and resuming: If it happens in a too
+     * frequent fashion, the codecs lose the resume postion and playback
+     * begins from the beginning.
+     * To work around use queue_post() to effectively delay the resume in case
+     * we're called another time. However this has another problem: id3->offset
+     * gets zero since playback is stopped. Therefore, try to peek at the
+     * queue_post from the last call to get the correct offset. This also
+     * lets us conviniently remove the queue event so Q_AUDIO_PLAY is only
+     * processed once. */
+    bool play_queued = queue_peek_ex(&audio_queue, &ev, QPEEK_REMOVE_EVENTS, filter_list);
+
+    if (playing && offset > 0) /* current id3->offset is king */
+        ev.data = offset;
+
     /* don't call audio_hard_stop() as it frees this handle */
     if (thread_self() == audio_thread_id)
     {   /* inline case Q_AUDIO_STOP (audio_hard_stop() response
@@ -843,10 +873,9 @@ static int shrink_callback(int handle, unsigned hints, void* start, size_t old_s
 #ifdef PLAYBACK_VOICE
     voice_stop();
 #endif
-    /* we should be free to change the buffer now */
-    size_t wanted_size = (hints & BUFLIB_SHRINK_SIZE_MASK);
-    ssize_t size = (ssize_t)old_size - wanted_size;
-    /* set final buffer size before calling audio_reset_buffer_noalloc() */
+    /* we should be free to change the buffer now
+     * set final buffer size before calling audio_reset_buffer_noalloc()
+     * (now it's the total size, the call will subtract voice etc) */
     filebuflen = size;
     switch (hints & BUFLIB_SHRINK_POS_MASK)
     {
@@ -859,12 +888,10 @@ static int shrink_callback(int handle, unsigned hints, void* start, size_t old_s
             audio_reset_buffer_noalloc(start + wanted_size);
             break;
     }
-    if ((status & AUDIO_STATUS_PLAY) == AUDIO_STATUS_PLAY)
+    if (playing || play_queued)
     {
-        if (thread_self() == audio_thread_id)
-            audio_start_playback(offset, 0);  /* inline Q_AUDIO_PLAY */
-        else
-            audio_play(offset);
+        /* post, to make subsequent calls not break the resume position */
+        audio_queue_post(Q_AUDIO_PLAY, ev.data);
     }
 
     return BUFLIB_CB_OK;

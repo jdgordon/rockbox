@@ -184,7 +184,7 @@ static void check_model_variant(void)
     c200v2_variant = !GPIOA_PIN(7);
     GPIOA_DIR = saved_dir;
 }
-#elif defined(SANSA_FUZEV2) || defined(SANSA_CLIPPLUS)
+#elif defined(SANSA_FUZEV2) || defined(SANSA_CLIPPLUS) || defined(SANSA_CLIPZIP)
 int amsv2_variant;
 
 static void check_model_variant(void)
@@ -223,6 +223,8 @@ void system_init(void)
 #else
     CGU_PERI &= ~0x7f;      /* pclk 24 MHz */
 #endif
+
+    CGU_PERI &= ~(1<<24);   /*disable built in boot rom clock*/
 
     /* bits 31:30 should be set to 0 in arm926-ejs */
     asm volatile(

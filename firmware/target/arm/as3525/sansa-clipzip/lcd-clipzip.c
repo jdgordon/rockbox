@@ -5,7 +5,7 @@
  *   Jukebox    |    |   (  <_> )  \___|    < | \_\ (  <_> > <  <
  *   Firmware   |____|_  /\____/ \___  >__|_ \|___  /\____/__/\_ \
  *                     \/            \/     \/    \/            \/
- * $Id: lcd-clipzip.c 30465 2011-09-06 16:55:52Z bertrik $
+ * $Id$
  *
  * Copyright (C) 2011 Bertrik Sikken
  *
@@ -51,12 +51,16 @@ static int lcd_hw_init(void)
     SSP_IMSC &= ~0xF;       /* disable interrupts */
     SSP_DMACR &= ~0x3;      /* disable DMA */
 
+    /* GPIO A3 is ??? but needs to be set */
+    GPIOA_DIR |= (1 << 3);
+    GPIOA_PIN(3) = (1 << 3);
+
     /* configure GPIO B2 (lcd D/C#) as output */
     GPIOB_DIR |= (1<<2);
 
     /* configure GPIO B3 (lcd type detect) as input */
     GPIOB_DIR &= ~(1<<3);
-
+    
     /* configure GPIO A5 (lcd reset#) as output and perform lcd reset */
     GPIOA_DIR |= (1 << 5);
     GPIOA_PIN(5) = 0;
@@ -104,7 +108,7 @@ static void lcd_write(uint8_t cmd, uint8_t data)
 }
 
 /*  Initialises lcd type 0
- *  This appears to be a Visionox M00230 OLED display controlled by a SEPS114A.
+ *  This appears to be a WiseChip OLED display controlled by a SEPS114A.
  */
 static void lcd_init_type0(void)
 {
@@ -127,7 +131,7 @@ static void lcd_init_type0(void)
     lcd_write(0x33, 0x5F);  /* DISPLAY_Y2 */
     lcd_write(0xE0, 0x10);  /* RGB_IF */
     lcd_write(0xE1, 0x00);  /* RGB_POL */
-    lcd_write(0xE5, 0x00);  /* DISPLAY_MODE_CONTROL */
+    lcd_write(0xE5, 0x80);  /* DISPLAY_MODE_CONTROL */
     lcd_write(0x0D, 0x00);  /* CPU_IF */
     lcd_write(0x1D, 0x01);  /* MEMORY_WRITE_READ */
     lcd_write(0x09, 0x00);  /* ROW_SCAN_DIRECTION */
@@ -151,10 +155,12 @@ static void lcd_write_nibbles(uint8_t val)
     lcd_write_dat((val >> 0) & 0x0F);
 }
 
-/* initialises lcd type 1 */
+/* Initialises lcd type 1
+ * This appears to be a Visionox OLED display, with an unknown controller
+ */
 static void lcd_init_type1(void)
 {
-    static const uint8_t curve[256] = {
+    static const uint8_t curve[128] = {
         /* 5-bit curve */
         0, 5, 10, 15, 20, 25, 30, 35, 39, 43, 47, 51, 55, 59, 63, 67,
         71, 75, 79, 83, 87, 91, 95, 99, 103, 105, 109, 113, 117, 121, 123, 127,
@@ -181,7 +187,7 @@ static void lcd_init_type1(void)
     lcd_write_dat(0x03);
 
     lcd_write_cmd(0x05);
-    lcd_write_dat(0x08);
+    lcd_write_dat(0x00);    /* 0x08 results in BGR colour */
 
     lcd_write_cmd(0x06);
     lcd_write_dat(0x00);
@@ -242,7 +248,7 @@ static void lcd_init_type1(void)
     lcd_write_dat(0x10);
 
     lcd_write_cmd(0x3A);
-    for (i = 0; i < 256; i++) {
+    for (i = 0; i < 128; i++) {
         lcd_write_nibbles(curve[i]);
     }
 
@@ -257,7 +263,9 @@ static void lcd_init_type1(void)
 /* enables/disables the lcd */
 void lcd_enable(bool on)
 {
-    lcd_enabled = on;
+    if (on == lcd_enabled) {
+        return;
+    }
 
     if (lcd_type == 0) {
         if (on) {
@@ -295,6 +303,8 @@ void lcd_enable(bool on)
             lcd_write_dat(0x01);
         }
     }
+    
+    lcd_enabled = on;
 }
 
 /* returns true if the lcd is enabled */
@@ -361,12 +371,22 @@ void oled_brightness(int brightness)
     }
 }
 
+/* Writes framebuffer data */
+void lcd_write_data(const fb_data *data, int count)
+{
+    fb_data pixel;
+
+    while (count--) {
+        pixel = *data++;
+        lcd_write_dat((pixel >> 8) & 0xFF);
+        lcd_write_dat((pixel >> 0) & 0xFF);
+    }
+}
+
 /* Updates a fraction of the display. */
 void lcd_update_rect(int x, int y, int width, int height)
 {
-    fb_data *ptr;
-    fb_data pixel;
-    int row, col;
+    int row;
     int x_end = x + width;
     int y_end = y + height;
 
@@ -389,6 +409,7 @@ void lcd_update_rect(int x, int y, int width, int height)
     if (y_end > LCD_HEIGHT) {
         y_end = LCD_HEIGHT;
     }
+    width = x_end - x;
 
     /* setup GRAM write window */
     lcd_setup_rect(x, x_end - 1, y, y_end - 1);
@@ -396,12 +417,7 @@ void lcd_update_rect(int x, int y, int width, int height)
     /* write to GRAM */
     lcd_write_cmd((lcd_type == 0) ? 0x08 : 0x0C);   /* DDRAM_DATA_ACCESS_PORT */
     for (row = y; row < y_end; row++) {
-        ptr = &lcd_framebuffer[row][x];
-        for (col = x; col < x_end; col++) {
-            pixel = *ptr++;
-            lcd_write_dat((pixel >> 8) & 0xFF);
-            lcd_write_dat((pixel >> 0) & 0xFF);
-        }
+        lcd_write_data(&lcd_framebuffer[row][x], width);
     }
 }
 
