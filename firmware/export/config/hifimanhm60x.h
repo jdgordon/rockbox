@@ -17,7 +17,7 @@
                          SAMPR_CAP_32 | SAMPR_CAP_24 | SAMPR_CAP_22 | \
                          SAMPR_CAP_16 | SAMPR_CAP_12 | SAMPR_CAP_11 | SAMPR_CAP_8)
 
-#define HAVE_TDA1543
+#define HAVE_DUMMY_CODEC
 #define CODEC_SLAVE
 /* define this if you have a bitmap LCD display */
 #define HAVE_LCD_BITMAP
