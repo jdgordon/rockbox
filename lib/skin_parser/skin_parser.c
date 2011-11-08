@@ -37,8 +37,6 @@ int skin_line = 0;
 char* skin_start = 0;
 int viewport_line = 0;
 
-static int tag_recursion_level = 0;
-
 #ifdef ROCKBOX
 static skin_callback callback = NULL;
 static void* callback_data;
@@ -91,7 +89,6 @@ struct skin_element* skin_parse(const char* document)
 
     while(*cursor != '\0')
     {
-        printf("skin_parse: %d\n", skin_line);
         struct skin_element* tree = skin_parse_viewport(&cursor);
         if(!root)
         {
@@ -124,8 +121,6 @@ static struct skin_element* skin_parse_viewport(const char** document)
     struct skin_element* root = NULL;
     struct skin_element* last = NULL;
     struct skin_element* retval = NULL;
-    
-    tag_recursion_level = 0;
 
     retval = skin_alloc_element();
     if (!retval)
@@ -217,7 +212,6 @@ static struct skin_element* skin_parse_viewport(const char** document)
 
         if(sublines)
         {
-            printf("skin_parse_sublines: %d\n", skin_line);
             struct skin_element* out = skin_parse_sublines(&cursor);
             if (!root)
             {
@@ -245,8 +239,7 @@ static struct skin_element* skin_parse_viewport(const char** document)
             if (check_viewport(cursor))
                 break;
 #endif
-            
-            printf("skin_parse_line: %d\n", skin_line);
+
             struct skin_element* out = skin_parse_line(&cursor);
             if (!root)
             {
@@ -517,13 +510,13 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
     char tag_name[3];
     char* tag_args;
     const struct tag_info *tag;
+    struct skin_tag_parameter* params = NULL;
 
     int num_args = 1;
     int i;
     int star = 0; /* Flag for the all-or-none option */
 
     int optional = 0;
-    tag_recursion_level++;
 
     /* Checking the tag name */
     tag_name[0] = cursor[0];
@@ -624,8 +617,8 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
 
     cursor = bookmark; /* Restoring the cursor */
     element->params_count = num_args;
-    element->params = skin_alloc_params(num_args, tag_recursion_level<=1);
-    if (!element->params)
+    params = skin_alloc_params(num_args);
+    if (!params)
         return 0;
 
     /* Now we have to actually parse each argument */
@@ -713,14 +706,14 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
         else
             type_code = *tag_args;
         /* Storing the type code */
-        element->params[i].type_code = type_code;
+        params[i].type_code = type_code;
 
         /* Checking a nullable argument for null. */
         if(*cursor == DEFAULTSYM && !isdigit(cursor[1]))
         {
             if(islower(type_code))
             {
-                element->params[i].type = DEFAULT;
+                params[i].type = DEFAULT;
                 cursor++;
             }
             else
@@ -738,8 +731,8 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
                 return 0;
             }
 
-            element->params[i].type = INTEGER;
-            element->params[i].data.number = scan_int(&cursor);
+            params[i].type = INTEGER;
+            params[i].data.number = scan_int(&cursor);
         }
         else if(tolower(type_code) == 'd')
         {
@@ -765,23 +758,23 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
             }
             if (have_tenth == false)
                 val *= 10;
-            element->params[i].type = DECIMAL;
-            element->params[i].data.number = val;
+            params[i].type = DECIMAL;
+            params[i].data.number = val;
         }
         else if(tolower(type_code) == 'n' ||
                 tolower(type_code) == 's' || tolower(type_code) == 'f')
         {
             /* Scanning a string argument */
-            element->params[i].type = STRING;
-            element->params[i].data.text = skin_buffer_to_offset(scan_string(&cursor));
+            params[i].type = STRING;
+            params[i].data.text = skin_buffer_to_offset(scan_string(&cursor));
 
         }
         else if(tolower(type_code) == 'c')
         {
             /* Recursively parsing a code argument */
-            element->params[i].type = CODE;
-            element->params[i].data.code = skin_buffer_to_offset(skin_parse_code_as_arg(&cursor));
-            if(element->params[i].data.code < 0)
+            params[i].type = CODE;
+            params[i].data.code = skin_buffer_to_offset(skin_parse_code_as_arg(&cursor));
+            if(params[i].data.code < 0)
                 return 0;
         }
         else if (tolower(type_code) == 't')
@@ -791,8 +784,8 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
             if (!skin_parse_tag(child, &cursor))
                 return 0;
             child->next = skin_buffer_to_offset(NULL);
-            element->params[i].type = CODE;
-            element->params[i].data.code = skin_buffer_to_offset(child);
+            params[i].type = CODE;
+            params[i].data.code = skin_buffer_to_offset(child);
         }
             
 
@@ -823,6 +816,7 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
             tag_args++;
         }
     }
+    element->params = skin_buffer_to_offset(params);
 
     /* Checking for a premature end */
     if(*tag_args != '\0' && !optional)
@@ -838,7 +832,6 @@ static int skin_parse_tag(struct skin_element* element, const char** document)
     }
 #endif
     *document = cursor;
-    tag_recursion_level--;
 
     return 1;
 }
@@ -1162,6 +1155,7 @@ struct skin_element* skin_alloc_element()
         return NULL;
     retval->type = UNKNOWN;
     retval->next = skin_buffer_to_offset(NULL);
+    retval->params = skin_buffer_to_offset(NULL);
     retval->tag = NULL;
     retval->params_count = 0;
     retval->children_count = 0;
@@ -1174,16 +1168,8 @@ struct skin_element* skin_alloc_element()
  * enough for any tag. params should be used straight away by the callback
  * so this is safe.
  */
-struct skin_tag_parameter* skin_alloc_params(int count, bool use_shared_params)
+struct skin_tag_parameter* skin_alloc_params(int count)
 {
-#ifdef ROCKBOX
-    static struct skin_tag_parameter params[MAX_TAG_PARAMS];
-    if (use_shared_params && count <= MAX_TAG_PARAMS)
-    {
-        memset(params, 0, sizeof(params));
-        return params;
-    }
-#endif
     size_t size = sizeof(struct skin_tag_parameter) * count;
     return (struct skin_tag_parameter*)skin_buffer_alloc(size);
 

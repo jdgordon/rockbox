@@ -119,7 +119,7 @@ struct skin_element
     const struct tag_info *tag;
 
     /* Pointer to an array of parameters */
-    struct skin_tag_parameter* params;
+    OFFSETTYPE(struct skin_tag_parameter*) params;
 
     /* Number of elements in the children array */
     short children_count;
@@ -155,7 +155,7 @@ struct skin_element* skin_parse(const char* document);
 /* Memory management functions */
 struct skin_element* skin_alloc_element(void);
 struct skin_element** skin_alloc_children(int count);
-struct skin_tag_parameter* skin_alloc_params(int count, bool use_shared_params);
+struct skin_tag_parameter* skin_alloc_params(int count);
 char* skin_alloc_string(int length);
 
 void skin_free_tree(struct skin_element* root);
