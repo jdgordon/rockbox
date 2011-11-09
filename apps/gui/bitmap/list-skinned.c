@@ -175,7 +175,7 @@ bool skinlist_draw(struct screen *display, struct gui_synclist *list)
     for (cur_line = 0; cur_line < display_lines; cur_line++)
     {
         struct skin_element* viewport;
-        struct skin_viewport* skin_viewport;
+        struct skin_viewport* skin_viewport = NULL;
         if (list_start_item+cur_line+1 > list->nb_items)
             break;
         current_drawing_line = list_start_item+cur_line;

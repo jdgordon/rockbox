@@ -306,7 +306,7 @@ static struct skin_element* skin_parse_line_optional(const char** document,
     struct skin_element* root = NULL;
     struct skin_element* current = NULL;
     struct skin_element* retval = NULL;
-    struct skin_element** children;
+    struct skin_element** children = NULL;
 
     /* A wrapper for the line */
     retval = skin_alloc_element();

@@ -183,7 +183,7 @@ void *skin_find_item(const char *label, enum skin_find_what what,
     while (list.linkedlist)
     {
         bool skip = false;
-        struct wps_token *token;
+        struct wps_token *token = NULL;
         if (!isvplist)
             token = SKINOFFSETTOPTR(skin_buffer, list.linkedlist->token);
         switch (what)
