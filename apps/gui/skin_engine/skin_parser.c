@@ -330,7 +330,7 @@ static int parse_image_display(struct skin_element *element,
     {
         return WPS_ERROR_INVALID_PARAM;
     }
-    id->label = PTRTOSKINOFFSET(skin_buffer, label);
+    id->label = img->label;
     id->offset = 0;
     id->token = PTRTOSKINOFFSET(skin_buffer, NULL);
     if (img->using_preloaded_icons)
@@ -731,7 +731,7 @@ static int parse_logical_if(struct skin_element *element,
     if (!lif)
         return -1;
     token->value.data = PTRTOSKINOFFSET(skin_buffer, lif);
-    lif->token = PTRTOSKINOFFSET(skin_buffer, get_param_code(element, 0)->data);
+    lif->token = get_param_code(element, 0)->data;
     
     if (!strncmp(op, "=", 1))
         lif->op = IF_EQUALS;
@@ -795,7 +795,7 @@ static int parse_substring_tag(struct skin_element* element,
         ss->length = -1;
     else
         ss->length = get_param(element, 1)->data.number;
-    ss->token = PTRTOSKINOFFSET(skin_buffer, get_param_code(element, 2)->data);
+    ss->token = get_param_code(element, 2)->data;
     token->value.data = PTRTOSKINOFFSET(skin_buffer, ss);
     return 0;
 }
@@ -1741,20 +1741,28 @@ static bool skin_load_fonts(struct wps_data *data)
         /* finally, assign the font_id to the viewport */
         vp->font = font->id;
     }
-    int *font_ids = skin_buffer_alloc(font_count * sizeof(int));
-    if (!success || font_ids == NULL)
+    if (font_count)
     {
-        while (font_count > 0)
+        int *font_ids = skin_buffer_alloc(font_count * sizeof(int));
+        if (!success || font_ids == NULL)
         {
-            if(id_array[--font_count] != -1)
-                font_unload(id_array[font_count]);
+            while (font_count > 0)
+            {
+                if(id_array[--font_count] != -1)
+                    font_unload(id_array[font_count]);
+            }
+            data->font_ids = PTRTOSKINOFFSET(skin_buffer, NULL);
+            return false;
         }
-        data->font_ids = PTRTOSKINOFFSET(skin_buffer, NULL);
-        return false;
+        memcpy(font_ids, id_array, sizeof(int)*font_count);
+        data->font_count = font_count;
+        data->font_ids = PTRTOSKINOFFSET(skin_buffer, font_ids);
     }
-    memcpy(font_ids, id_array, sizeof(int)*font_count);
-    data->font_count = font_count;
-    data->font_ids = PTRTOSKINOFFSET(skin_buffer, font_ids);
+    else
+    {
+        data->font_count = 0;
+        data->font_ids = PTRTOSKINOFFSET(skin_buffer, NULL);
+    }
     return success;
 }
 
@@ -1891,6 +1899,7 @@ static int skin_element_callback(struct skin_element* element, void* data)
             token = (struct wps_token*)skin_buffer_alloc(sizeof(struct wps_token));
             memset(token, 0, sizeof(*token));
             token->type = element->tag->type;
+            token->value.data = -1;
             
             if (element->tag->flags&SKIN_RTC_REFRESH)
             {
