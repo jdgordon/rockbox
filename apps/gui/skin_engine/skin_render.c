@@ -770,7 +770,7 @@ void skin_render(struct gui_wps *gwps, unsigned refresh_mode)
     label = SKINOFFSETTOPTR(skin_buffer, skin_viewport->label);
     if (skin_viewport->label == VP_DEFAULT_LABEL)
         label = VP_DEFAULT_LABEL_STRING;
-    if (label && viewport->next &&
+    if (label && SKINOFFSETTOPTR(skin_buffer, viewport->next) &&
         !strcmp(label,VP_DEFAULT_LABEL_STRING))
         refresh_mode = 0;
     
