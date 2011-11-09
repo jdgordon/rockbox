@@ -341,7 +341,7 @@ static int parse_image_display(struct skin_element *element,
     if (element->params_count > 1)
     {
         if (get_param(element, 1)->type == CODE)
-            id->token = PTRTOSKINOFFSET(skin_buffer, get_param_code(element, 1)->data);
+            id->token = get_param_code(element, 1)->data;
         /* specify a number. 1 being the first subimage (i.e top) NOT 0 */
         else if (get_param(element, 1)->type == INTEGER)
             id->subimage = get_param(element, 1)->data.number - 1;
