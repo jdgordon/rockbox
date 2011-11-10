@@ -306,7 +306,7 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
 #ifdef HAVE_LCD_BITMAP
     struct gui_wps *gwps = info->gwps;
     struct wps_data *data = gwps->data;
-#endif    
+#endif
     /* Tags here are ones which need to be "turned off" or cleared 
      * if they are in a conditional branch which isnt being used */
     if (branch->type == LINE_ALTERNATOR)
@@ -330,7 +330,7 @@ static void do_tags_in_hidden_conditional(struct skin_element* branch,
                 int i;
                 for (i=0; i<child->children_count; i++)
                 {
-                    do_tags_in_hidden_conditional(get_child(branch->children, i), info);
+                    do_tags_in_hidden_conditional(get_child(child->children, i), info);
                 }
                 child = SKINOFFSETTOPTR(skin_buffer, child->next);
                 continue;
