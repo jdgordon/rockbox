@@ -100,15 +100,15 @@ int sb_postproccess(enum screen_type screen, struct wps_data *data)
             /* hide this viewport, forever */
             vp->hidden_flags = VP_NEVER_VISIBLE;
         }
-        sb_set_info_vp(screen, VP_DEFAULT_LABEL_STRING);
+        sb_set_info_vp(screen, VP_DEFAULT_LABEL);
     }
     viewportmanager_theme_undo(screen, false);
     return 1;
 }
 
-static char *infovp_label[NB_SCREENS];
-static char *oldinfovp_label[NB_SCREENS];
-void sb_set_info_vp(enum screen_type screen, char *label)
+static OFFSETTYPE(char*) infovp_label[NB_SCREENS];
+static OFFSETTYPE(char*) oldinfovp_label[NB_SCREENS];
+void sb_set_info_vp(enum screen_type screen, OFFSETTYPE(char*) label)
 {
     infovp_label[screen] = label;
 }
@@ -117,15 +117,19 @@ struct viewport *sb_skin_get_info_vp(enum screen_type screen)
 {
     struct wps_data *data = skin_get_gwps(CUSTOM_STATUSBAR, screen)->data;
     struct skin_viewport *vp = NULL;
+    char *label;
     if (oldinfovp_label[screen] &&
-        strcmp(oldinfovp_label[screen], infovp_label[screen]))
+        (oldinfovp_label[screen] != infovp_label[screen]))
     {
         /* UI viewport changed, so force a redraw */
         oldinfovp_label[screen] = infovp_label[screen];
         viewportmanager_theme_enable(screen, false, NULL);
         viewportmanager_theme_undo(screen, true);
     }
-    vp = skin_find_item(infovp_label[screen], SKIN_FIND_UIVP, data);
+    label = SKINOFFSETTOPTR(skin_buffer, infovp_label[screen]);
+    if (infovp_label[screen] == VP_DEFAULT_LABEL)
+        label = VP_DEFAULT_LABEL_STRING;
+    vp = skin_find_item(label, SKIN_FIND_UIVP, data);
     if (!vp)
         return NULL;
     if (vp->parsed_fontid == 1)
@@ -271,7 +275,7 @@ void sb_skin_init(void)
 {
     FOR_NB_SCREENS(i)
     {
-        oldinfovp_label[i] = NULL;
+        oldinfovp_label[i] = VP_DEFAULT_LABEL;
     }
 }
 
