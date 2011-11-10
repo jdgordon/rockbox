@@ -476,6 +476,8 @@ static struct skin_element* skin_parse_sublines_optional(const char** document,
     for(i = 0; i < sublines; i++)
     {
         children[i] = skin_parse_line_optional(&cursor, conditional);
+        if (children[i] == NULL)
+            return NULL;
         skip_whitespace(&cursor);
 
         if(*cursor != MULTILINESYM && i != sublines - 1)

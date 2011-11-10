@@ -28,7 +28,11 @@
 #include "tag_table.h"
 #include "skin_parser.h"
 
+#ifdef __PCTOOL__
+extern char *skin_buffer;
+#else
 extern char skin_buffer[];
+#endif
 
 /* Timeout unit expressed in HZ. In WPS, all timeouts are given in seconds
    (possibly with a decimal fraction) but stored as integer values.
