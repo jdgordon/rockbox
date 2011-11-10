@@ -70,6 +70,8 @@ void* skin_buffer_from_offset(long offset)
 {
     return offset < 0 ? NULL : buffer_start + offset;
 }
+#else
+#error needs fixing
 #endif
 
 #ifdef USE_HOST_MALLOC
