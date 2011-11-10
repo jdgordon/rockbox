@@ -109,14 +109,11 @@ void screen_put_icon_with_offset(struct screen * display,
 void screen_put_iconxy(struct screen * display,
                        int xpos, int ypos, enum themable_icons icon)
 {
-    const void *data;
     const int screen = display->screen_type;
     const int width = ICON_WIDTH(screen);
     const int height = ICON_HEIGHT(screen);
     const int is_rtl = lang_is_rtl();
-    int stride;
     const struct bitmap *iconset;
-    screen_bitmap_part_func *draw_func = NULL;
     
     if (icon == Icon_NOICON)
     {
@@ -145,9 +142,6 @@ void screen_put_iconxy(struct screen * display,
     {
         iconset = &inbuilt_iconset[screen];
     }
-    data = iconset->data;
-    stride = STRIDE(display->screen_type, iconset->width, iconset->height);
-
     /* add some left padding to the icons if they are on the edge */
     if (xpos == 0)
         xpos++;
@@ -155,14 +149,8 @@ void screen_put_iconxy(struct screen * display,
     if (is_rtl)
         xpos = display->getwidth() - xpos - width;
 
-#if (LCD_DEPTH == 16) || defined(LCD_REMOTE_DEPTH) && (LCD_REMOTE_DEPTH == 16)
-    if (display->depth == 16)
-        draw_func   = display->transparent_bitmap_part;
-    else
-#endif
-        draw_func   = display->bitmap_part;
 
-    draw_func(data, 0, height * icon, stride, xpos, ypos, width, height);
+    display->bmp_part(iconset, 0, height * icon, xpos, ypos, width, height);
 }
 
 void screen_put_cursorxy(struct screen * display, int x, int y, bool on)
@@ -176,19 +164,19 @@ void screen_put_cursorxy(struct screen * display, int x, int y, bool on)
 
 static int buflib_move_callback(int handle, void* current, void* new)
 {
-    (void)current;
+    (void)handle;
     (void)new;
     int i;
     FOR_NB_SCREENS(j)
     {
         for (i=0; i<Iconset_Count; i++)
         {
-            if (iconsets[i][j].handle == handle)
+            struct iconset *set = &iconsets[i][j];
+            if (set->bmp.data == current)
             {
-                if (iconsets[i][j].handle_locked > 0)
+                if (set->handle_locked > 0)
                     return BUFLIB_CB_CANNOT_MOVE;
-                ptrdiff_t diff = new - current;
-                iconsets[i][j].bmp.data += diff;
+                set->bmp.data = new;
                 return BUFLIB_CB_OK;
             }
         }
@@ -201,7 +189,7 @@ static void load_icons(const char* filename, enum Iconset iconset,
                         enum screen_type screen)
 {
     int size_read;
-    int bmpformat = (FORMAT_NATIVE|FORMAT_DITHER);
+    int bmpformat = (FORMAT_NATIVE|FORMAT_DITHER|FORMAT_TRANSPARENT);
     struct iconset *ic = &iconsets[iconset][screen];
     int fd;
     
@@ -223,17 +211,19 @@ static void load_icons(const char* filename, enum Iconset iconset,
             return;
         }
         lseek(fd, 0, SEEK_SET);
-        ic->handle_locked = 1;
         ic->bmp.data = core_get_data(ic->handle);
 
+        ic->handle_locked = 1;
         size_read = read_bmp_fd(fd, &ic->bmp, buf_size, bmpformat, NULL);
-        if (size_read <= 0)
-        {
-            core_free(ic->handle);
-            return;
-        }
         ic->handle_locked = 0;
-        ic->loaded = true;
+
+        /* free unused alpha channel, if any */
+        core_shrink(ic->handle, ic->bmp.data, size_read);
+
+        if (size_read <= 0)
+            ic->handle = core_free(ic->handle);
+        else
+            ic->loaded = true;
     }
 }
 
@@ -244,13 +234,15 @@ void icons_init(void)
     {
         for (i=0; i<Iconset_Count; i++)
         {
-            if (iconsets[i][j].loaded && iconsets[i][j].handle > 0)
+            struct iconset* set = &iconsets[i][j];
+            if (set->loaded && set->handle > 0)
             {
-                core_free(iconsets[i][j].handle);
-                iconsets[i][j].loaded = false;
+                set->handle = core_free(set->handle);
+                set->loaded = false;
             }
         }
     }
+
     load_icons(global_settings.icon_file, Iconset_user, SCREEN_MAIN);
     
     if (global_settings.viewers_icon_file[0] &&

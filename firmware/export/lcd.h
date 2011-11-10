@@ -468,6 +468,9 @@ struct bitmap {
     int format;
     unsigned char *maskdata;
 #endif
+#ifdef HAVE_LCD_COLOR
+    int alpha_offset; /* byte-offset of alpha channel in data */
+#endif
     unsigned char *data;
 };
 
@@ -547,7 +550,9 @@ extern void lcd_bitmap_transparent(const fb_data *src, int x, int y,
 #define lcd_mono_bitmap lcd_bitmap
 #define lcd_mono_bitmap_part lcd_bitmap_part
 #endif /* LCD_DEPTH */
-
+extern void lcd_bmp_part(const struct bitmap* bm, int src_x, int src_y,
+                            int x, int y, int width, int height);
+extern void lcd_bmp(const struct bitmap* bm, int x, int y);
 #endif /* HAVE_LCD_BITMAP */
 
 
